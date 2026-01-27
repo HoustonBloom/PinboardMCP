@@ -4,6 +4,8 @@ Bloom Houston Collective Knowledge MCP Server
 An MCP server that queries Pinboard's public feeds and API v1 for bookmarks tagged
 bloom-houston, exposing collective learning and contributor relationships.
 
+Also supports searching your own full Pinboard and all public Pinboard.
+
 Requires PINBOARD_API_TOKEN environment variable (format: username:token)
 """
 
@@ -131,6 +133,50 @@ class PinboardClient:
             except httpx.RequestError as e:
                 raise Exception(f"Network error: {str(e)}")
 
+    async def get_my_bookmarks(self, tag: Optional[str] = None, count: int = 100) -> list[dict]:
+        """Get all bookmarks for the authenticated user."""
+        cache_key = f"my_bookmarks:{tag}:{count}"
+        cached = self._get_cached(cache_key)
+        if cached is not None:
+            return cached
+
+        params = {"results": count}
+        if tag:
+            params["tag"] = tag
+
+        data = await self.api_request("/posts/all", params)
+        
+        # /posts/all returns a list directly
+        if isinstance(data, list):
+            self._set_cache(cache_key, data)
+            return data
+        return []
+
+    async def get_public_recent(self, tag: Optional[str] = None, count: int = 100) -> list[dict]:
+        """Get recent public bookmarks, optionally filtered by tag."""
+        if tag:
+            return await self.get_tag_feed(tag, count)
+        else:
+            cache_key = f"public_recent:{count}"
+            cached = self._get_cached(cache_key)
+            if cached is not None:
+                return cached
+
+            url = f"{PINBOARD_FEEDS_BASE}/json/recent/"
+            params = {"count": count}
+
+            async with httpx.AsyncClient() as client:
+                try:
+                    response = await client.get(url, params=params, timeout=30.0)
+                    response.raise_for_status()
+                    data = response.json()
+                    self._set_cache(cache_key, data)
+                    return data
+                except httpx.HTTPStatusError as e:
+                    raise Exception(f"Feed error: {e.response.status_code}")
+                except httpx.RequestError as e:
+                    raise Exception(f"Network error: {str(e)}")
+
 
 # Global client instance
 _client: Optional[PinboardClient] = None
@@ -172,7 +218,7 @@ def get_bookmark_user(bookmark: dict) -> str:
 
 def get_bookmark_tags(bookmark: dict) -> list[str]:
     """Extract tags from bookmark."""
-    tags = extract_field(bookmark, "t", "tags")
+    tags = extract_field(bookmark, "t", "tags", "tag")
     if tags is None:
         return []
     if isinstance(tags, str):
@@ -202,7 +248,7 @@ def get_bookmark_date(bookmark: dict) -> str:
     return extract_field(bookmark, "dt", "time", "date") or "Unknown"
 
 
-def format_bookmark(b: dict) -> list[str]:
+def format_bookmark(b: dict, show_user: bool = True) -> list[str]:
     """Format a bookmark for display."""
     lines = []
     title = get_bookmark_title(b)
@@ -214,7 +260,8 @@ def format_bookmark(b: dict) -> list[str]:
 
     lines.append(f"**{title}**")
     lines.append(f"  URL: {url}")
-    lines.append(f"  Saved by: {user}")
+    if show_user:
+        lines.append(f"  Saved by: {user}")
     lines.append(f"  Tags: {', '.join(tags) if tags else 'none'}")
     if description:
         lines.append(f"  Notes: {description}")
@@ -351,6 +398,65 @@ async def list_tools() -> list[Tool]:
                 },
                 "required": []
             }
+        ),
+        # NEW TOOLS
+        Tool(
+            name="search_my_bookmarks",
+            description="Search YOUR personal Pinboard bookmarks (all bookmarks, any tag). "
+                       "This searches your entire Pinboard collection, not just bloom-houston tagged items.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "Search term to match against title, description, tags, or URL"
+                    },
+                    "tag": {
+                        "type": "string",
+                        "description": "Filter by specific tag"
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "description": "Maximum number of results to return (default: 20)",
+                        "default": 20
+                    }
+                },
+                "required": []
+            }
+        ),
+        Tool(
+            name="search_public_pinboard",
+            description="Search recent PUBLIC bookmarks across all of Pinboard (not just bloom-houston). "
+                       "Useful for discovering what others are bookmarking on any topic.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "Search term to match against title, description, tags, or URL"
+                    },
+                    "tag": {
+                        "type": "string",
+                        "description": "Filter by specific tag (searches public feed for this tag)"
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "description": "Maximum number of results to return (default: 20)",
+                        "default": 20
+                    }
+                },
+                "required": []
+            }
+        ),
+        Tool(
+            name="get_my_tags",
+            description="Get a list of all tags you've used in your Pinboard, with counts. "
+                       "Useful for exploring your own bookmark organization.",
+            inputSchema={
+                "type": "object",
+                "properties": {},
+                "required": []
+            }
         )
     ]
 
@@ -391,6 +497,21 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
                 format=arguments.get("format", "json"),
                 min_shared_tags=arguments.get("min_shared_tags", 1)
             )
+        # NEW TOOL HANDLERS
+        elif name == "search_my_bookmarks":
+            return await search_my_bookmarks(
+                query=arguments.get("query"),
+                tag=arguments.get("tag"),
+                limit=arguments.get("limit", 20)
+            )
+        elif name == "search_public_pinboard":
+            return await search_public_pinboard(
+                query=arguments.get("query"),
+                tag=arguments.get("tag"),
+                limit=arguments.get("limit", 20)
+            )
+        elif name == "get_my_tags":
+            return await get_my_tags()
         else:
             return [TextContent(type="text", text=f"Unknown tool: {name}")]
     except Exception as e:
@@ -686,6 +807,130 @@ async def get_network_map(format: str = "json", min_shared_tags: int = 1) -> lis
         }
 
         return [TextContent(type="text", text=json.dumps(network, indent=2))]
+
+
+# ============================================================================
+# NEW TOOLS: Personal and Public Pinboard Search
+# ============================================================================
+
+async def search_my_bookmarks(
+    query: Optional[str] = None,
+    tag: Optional[str] = None,
+    limit: int = 20
+) -> list[TextContent]:
+    """Search your personal Pinboard bookmarks."""
+    client = get_client()
+    
+    # Fetch more bookmarks to filter from (API doesn't support text search)
+    bookmarks = await client.get_my_bookmarks(tag=tag, count=500)
+
+    if not bookmarks:
+        return [TextContent(type="text", text="No bookmarks found in your Pinboard.")]
+
+    # Filter by search query if provided
+    results = []
+    for b in bookmarks:
+        if query:
+            query_lower = query.lower()
+            title = get_bookmark_title(b).lower()
+            description = get_bookmark_description(b).lower()
+            url = get_bookmark_url(b).lower()
+            tags = " ".join(get_bookmark_tags(b)).lower()
+
+            if not any(query_lower in field for field in [title, description, url, tags]):
+                continue
+
+        results.append(b)
+
+        if len(results) >= limit:
+            break
+
+    if not results:
+        msg = "No matching bookmarks found in your Pinboard"
+        if query:
+            msg += f" for '{query}'"
+        if tag:
+            msg += f" with tag '{tag}'"
+        return [TextContent(type="text", text=msg + ".")]
+
+    output_lines = [f"Found {len(results)} bookmark(s) in your Pinboard:\n"]
+    for b in results:
+        output_lines.extend(format_bookmark(b, show_user=False))
+
+    return [TextContent(type="text", text="\n".join(output_lines))]
+
+
+async def search_public_pinboard(
+    query: Optional[str] = None,
+    tag: Optional[str] = None,
+    limit: int = 20
+) -> list[TextContent]:
+    """Search recent public Pinboard bookmarks."""
+    client = get_client()
+    
+    # Get public bookmarks (optionally filtered by tag)
+    bookmarks = await client.get_public_recent(tag=tag, count=100)
+
+    if not bookmarks:
+        msg = "No public bookmarks found"
+        if tag:
+            msg += f" with tag '{tag}'"
+        return [TextContent(type="text", text=msg + ".")]
+
+    # Filter by search query if provided
+    results = []
+    for b in bookmarks:
+        if query:
+            query_lower = query.lower()
+            title = get_bookmark_title(b).lower()
+            description = get_bookmark_description(b).lower()
+            url = get_bookmark_url(b).lower()
+            tags = " ".join(get_bookmark_tags(b)).lower()
+
+            if not any(query_lower in field for field in [title, description, url, tags]):
+                continue
+
+        results.append(b)
+
+        if len(results) >= limit:
+            break
+
+    if not results:
+        msg = "No matching public bookmarks found"
+        if query:
+            msg += f" for '{query}'"
+        if tag:
+            msg += f" with tag '{tag}'"
+        return [TextContent(type="text", text=msg + ".")]
+
+    output_lines = [f"Found {len(results)} public bookmark(s):\n"]
+    for b in results:
+        output_lines.extend(format_bookmark(b, show_user=True))
+
+    return [TextContent(type="text", text="\n".join(output_lines))]
+
+
+async def get_my_tags() -> list[TextContent]:
+    """Get all tags from your Pinboard with counts."""
+    client = get_client()
+    
+    # Use the tags/get endpoint
+    tags_data = await client.api_request("/tags/get")
+
+    if not tags_data:
+        return [TextContent(type="text", text="No tags found in your Pinboard.")]
+
+    # tags_data is a dict of {tag: count}
+    sorted_tags = sorted(tags_data.items(), key=lambda x: int(x[1]), reverse=True)
+
+    output_lines = [f"Your Pinboard tags ({len(sorted_tags)} total):\n"]
+    for tag, count in sorted_tags[:50]:  # Show top 50
+        output_lines.append(f"  {tag}: {count}")
+
+    if len(sorted_tags) > 50:
+        output_lines.append(f"\n  ... and {len(sorted_tags) - 50} more tags")
+
+    return [TextContent(type="text", text="\n".join(output_lines))]
 
 
 async def main():
