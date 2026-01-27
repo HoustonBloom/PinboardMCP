@@ -1,7 +1,7 @@
 """
 Bloom Houston Collective Knowledge MCP Server
 
-An MCP server that queries Pinboard's API v2 for bookmarks tagged
+An MCP server that queries Pinboard's public feeds and API v1 for bookmarks tagged
 bloom-houston, exposing collective learning and contributor relationships.
 
 Requires PINBOARD_API_TOKEN environment variable (format: username:token)
@@ -23,169 +23,116 @@ from mcp.server.stdio import stdio_server
 from mcp.types import Tool, TextContent
 
 # Constants
-PINBOARD_API_BASE = "https://api.pinboard.in/v2"
+PINBOARD_API_BASE = "https://api.pinboard.in/v1"
+PINBOARD_FEEDS_BASE = "https://feeds.pinboard.in"
 COLLECTIVE_TAG = "bloom-houston"
 CACHE_TTL_SECONDS = 300  # 5 minutes
 
 
 @dataclass
-class RateLimitInfo:
-    """Track rate limit status from API headers."""
-    requests_remaining: Optional[int] = None
-    reset_time: Optional[str] = None
-    reset_timestamp: Optional[int] = None
-
-
-class PinboardAPIError(Exception):
-    """Custom exception for Pinboard API errors."""
-    def __init__(self, message: str, error_code: Optional[int] = None, error_type: Optional[str] = None):
-        self.message = message
-        self.error_code = error_code
-        self.error_type = error_type
-        super().__init__(self.message)
+class CachedData:
+    """Cached API response with timestamp."""
+    data: any
+    timestamp: float
 
 
 class PinboardClient:
-    """Client for Pinboard API v2 with authentication and rate limiting."""
+    """Client for Pinboard API v1 and public feeds."""
 
     def __init__(self, auth_token: str):
         self.auth_token = auth_token
-        self.rate_limit = RateLimitInfo()
-        self._cache: dict = {}
-        self._cache_timestamps: dict = {}
-
-    def _get_cache_key(self, endpoint: str, params: dict) -> str:
-        """Generate cache key from endpoint and params."""
-        param_str = urlencode(sorted(params.items()))
-        return f"{endpoint}?{param_str}"
+        self._cache: dict[str, CachedData] = {}
 
     def _is_cache_valid(self, cache_key: str) -> bool:
         """Check if cached data is still valid."""
-        if cache_key not in self._cache_timestamps:
+        if cache_key not in self._cache:
             return False
-        return (time.time() - self._cache_timestamps[cache_key]) < CACHE_TTL_SECONDS
+        return (time.time() - self._cache[cache_key].timestamp) < CACHE_TTL_SECONDS
 
-    def _update_rate_limit(self, response: httpx.Response) -> None:
-        """Update rate limit info from response headers."""
-        if "X-Requests-Remaining" in response.headers:
-            self.rate_limit.requests_remaining = int(response.headers["X-Requests-Remaining"])
-        if "X-Reset-Time" in response.headers:
-            self.rate_limit.reset_time = response.headers["X-Reset-Time"]
-        if "X-Reset-Timestamp" in response.headers:
-            self.rate_limit.reset_timestamp = int(response.headers["X-Reset-Timestamp"])
+    def _get_cached(self, cache_key: str) -> Optional[any]:
+        """Get cached data if valid."""
+        if self._is_cache_valid(cache_key):
+            return self._cache[cache_key].data
+        return None
 
-    async def _request(
-        self,
-        method: str,
-        endpoint: str,
-        params: Optional[dict] = None,
-        use_cache: bool = True
-    ) -> dict:
-        """Make authenticated request to Pinboard API v2."""
-        if params is None:
-            params = {}
+    def _set_cache(self, cache_key: str, data: any) -> None:
+        """Cache data with current timestamp."""
+        self._cache[cache_key] = CachedData(data=data, timestamp=time.time())
 
-        cache_key = self._get_cache_key(endpoint, params)
+    async def get_tag_feed(self, tag: str = COLLECTIVE_TAG, count: int = 100) -> list[dict]:
+        """Get public bookmarks for a tag using the JSON feed."""
+        cache_key = f"feed:{tag}:{count}"
+        cached = self._get_cached(cache_key)
+        if cached is not None:
+            return cached
 
-        # Check cache for GET requests
-        if method == "GET" and use_cache and self._is_cache_valid(cache_key):
-            return self._cache[cache_key]
-
-        url = f"{PINBOARD_API_BASE}{endpoint}"
-
-        # Use header-based authentication
-        headers = {
-            "X-Auth-Token": self.auth_token,
-            "User-Agent": "BloomHoustonMCP/1.0"
-        }
+        # Use public JSON feed - no auth required
+        url = f"{PINBOARD_FEEDS_BASE}/json/t:{tag}/"
+        params = {"count": count}
 
         async with httpx.AsyncClient() as client:
             try:
-                response = await client.request(
-                    method=method,
-                    url=url,
-                    params=params,
-                    headers=headers,
-                    timeout=30.0
-                )
-            except httpx.TimeoutException:
-                raise PinboardAPIError("Request timed out", error_code=504)
-            except httpx.RequestError as e:
-                raise PinboardAPIError(f"Network error: {str(e)}", error_code=503)
-
-            # Update rate limit info
-            self._update_rate_limit(response)
-
-            # Handle HTTP errors
-            if response.status_code == 401:
-                raise PinboardAPIError("Authentication failed. Check your API token.", error_code=401)
-            elif response.status_code == 402:
-                raise PinboardAPIError("Payment required or account locked.", error_code=402)
-            elif response.status_code == 429:
-                reset_info = ""
-                if self.rate_limit.reset_time:
-                    reset_info = f" Resets at {self.rate_limit.reset_time}"
-                raise PinboardAPIError(f"Rate limited.{reset_info}", error_code=429)
-            elif response.status_code == 503:
-                raise PinboardAPIError("Pinboard service unavailable.", error_code=503)
-            elif response.status_code >= 400:
-                raise PinboardAPIError(f"HTTP error {response.status_code}", error_code=response.status_code)
-
-            # Parse JSON response
-            try:
+                response = await client.get(url, params=params, timeout=30.0)
+                response.raise_for_status()
                 data = response.json()
+                self._set_cache(cache_key, data)
+                return data
+            except httpx.HTTPStatusError as e:
+                raise Exception(f"Feed error: {e.response.status_code}")
+            except httpx.RequestError as e:
+                raise Exception(f"Network error: {str(e)}")
             except json.JSONDecodeError:
-                raise PinboardAPIError("Invalid JSON response from API")
+                raise Exception("Invalid JSON in feed response")
 
-            # Check for API-level errors
-            if data.get("status") == "error":
-                error_msg = data.get("error_message", data.get("error", "Unknown error"))
-                error_code = data.get("error_code")
-                raise PinboardAPIError(error_msg, error_code=int(error_code) if error_code else None)
+    async def get_recent_feed(self, count: int = 50) -> list[dict]:
+        """Get recent public bookmarks from the recent feed."""
+        cache_key = f"recent:{count}"
+        cached = self._get_cached(cache_key)
+        if cached is not None:
+            return cached
 
-            # Cache successful GET responses
-            if method == "GET" and use_cache:
-                self._cache[cache_key] = data
-                self._cache_timestamps[cache_key] = time.time()
-
-            return data
-
-    async def get_tag_bookmarks(self, tag: str = COLLECTIVE_TAG, count: int = 100) -> list[dict]:
-        """Get bookmarks for a specific tag from sitewide public bookmarks."""
+        url = f"{PINBOARD_FEEDS_BASE}/json/recent/"
         params = {"count": count}
-        data = await self._request("GET", f"/site/tag/{tag}", params)
-        return data.get("bookmarks", data.get("posts", []))
 
-    async def search_site(self, query: str, tag: Optional[str] = None, count: int = 100) -> list[dict]:
-        """Search sitewide public bookmarks."""
-        params = {"query": query, "count": count}
-        if tag:
-            params["tag"] = tag
-        data = await self._request("GET", "/site/search/", params)
-        return data.get("bookmarks", data.get("posts", []))
+        async with httpx.AsyncClient() as client:
+            try:
+                response = await client.get(url, params=params, timeout=30.0)
+                response.raise_for_status()
+                data = response.json()
+                self._set_cache(cache_key, data)
+                return data
+            except Exception as e:
+                raise Exception(f"Feed error: {str(e)}")
 
-    async def get_recent(self, tag: Optional[str] = None, count: int = 20) -> list[dict]:
-        """Get recent sitewide bookmarks, optionally filtered by tag."""
-        params = {"count": count}
-        if tag:
-            params["tag"] = tag
-        data = await self._request("GET", "/site/recent/", params)
-        return data.get("bookmarks", data.get("posts", []))
+    async def api_request(self, endpoint: str, params: Optional[dict] = None) -> dict:
+        """Make authenticated request to Pinboard API v1."""
+        if params is None:
+            params = {}
+        
+        # Add auth token and format
+        params["auth_token"] = self.auth_token
+        params["format"] = "json"
 
-    async def get_url_info(self, url: str) -> dict:
-        """Get information about a specific URL."""
-        params = {"url": url}
-        data = await self._request("GET", "/url/", params)
-        return data
+        url = f"{PINBOARD_API_BASE}{endpoint}"
 
-    def get_rate_limit_status(self) -> str:
-        """Get human-readable rate limit status."""
-        if self.rate_limit.requests_remaining is not None:
-            return f"Requests remaining: {self.rate_limit.requests_remaining}"
-        return "Rate limit info not available"
+        async with httpx.AsyncClient() as client:
+            try:
+                response = await client.get(url, params=params, timeout=30.0)
+                
+                if response.status_code == 401:
+                    raise Exception("Authentication failed. Check your API token.")
+                elif response.status_code == 429:
+                    raise Exception("Rate limited. Please wait before making more requests.")
+                
+                response.raise_for_status()
+                return response.json()
+            except httpx.HTTPStatusError as e:
+                raise Exception(f"API error: {e.response.status_code}")
+            except httpx.RequestError as e:
+                raise Exception(f"Network error: {str(e)}")
 
 
-# Global client instance (initialized on first use)
+# Global client instance
 _client: Optional[PinboardClient] = None
 
 
@@ -195,42 +142,82 @@ def get_client() -> PinboardClient:
     if _client is None:
         auth_token = os.environ.get("PINBOARD_API_TOKEN")
         if not auth_token:
-            raise PinboardAPIError(
+            raise Exception(
                 "PINBOARD_API_TOKEN environment variable not set. "
-                "Set it to your Pinboard API token (format: username:token)",
-                error_code=401
+                "Set it to your Pinboard API token (format: username:token)"
             )
         _client = PinboardClient(auth_token)
     return _client
 
 
 def normalize_url(url: str) -> str:
-    """Normalize URL for comparison (following Pinboard's normalization)."""
+    """Normalize URL for comparison."""
     parsed = urlparse(url)
-    # Remove trailing slashes and normalize case
     path = parsed.path.rstrip('/')
     return f"{parsed.scheme}://{parsed.netloc}{path}".lower()
+
+
+def extract_field(bookmark: dict, *keys) -> Optional[str]:
+    """Extract a field from bookmark, trying multiple possible keys."""
+    for key in keys:
+        if key in bookmark and bookmark[key]:
+            return bookmark[key]
+    return None
+
+
+def get_bookmark_user(bookmark: dict) -> str:
+    """Extract username from bookmark."""
+    return extract_field(bookmark, "a", "user", "author") or "Unknown"
+
+
+def get_bookmark_tags(bookmark: dict) -> list[str]:
+    """Extract tags from bookmark."""
+    tags = extract_field(bookmark, "t", "tags")
+    if tags is None:
+        return []
+    if isinstance(tags, str):
+        return tags.split() if tags else []
+    if isinstance(tags, list):
+        return tags
+    return []
+
+
+def get_bookmark_url(bookmark: dict) -> str:
+    """Extract URL from bookmark."""
+    return extract_field(bookmark, "u", "href", "url") or ""
+
+
+def get_bookmark_title(bookmark: dict) -> str:
+    """Extract title from bookmark."""
+    return extract_field(bookmark, "d", "description", "title") or "No title"
+
+
+def get_bookmark_description(bookmark: dict) -> str:
+    """Extract description/notes from bookmark."""
+    return extract_field(bookmark, "n", "extended", "notes") or ""
+
+
+def get_bookmark_date(bookmark: dict) -> str:
+    """Extract date from bookmark."""
+    return extract_field(bookmark, "dt", "time", "date") or "Unknown"
 
 
 def format_bookmark(b: dict) -> list[str]:
     """Format a bookmark for display."""
     lines = []
-    # Handle both old feed format and new API format
-    title = b.get("description", b.get("d", "No title"))
-    url = b.get("href", b.get("u", "N/A"))
-    user = b.get("user", b.get("a", "Unknown"))
-    tags = b.get("tags", b.get("t", []))
-    if isinstance(tags, str):
-        tags = tags.split()
-    extended = b.get("extended", b.get("n", ""))
-    date = b.get("time", b.get("dt", "Unknown"))
+    title = get_bookmark_title(b)
+    url = get_bookmark_url(b)
+    user = get_bookmark_user(b)
+    tags = get_bookmark_tags(b)
+    description = get_bookmark_description(b)
+    date = get_bookmark_date(b)
 
     lines.append(f"**{title}**")
     lines.append(f"  URL: {url}")
     lines.append(f"  Saved by: {user}")
     lines.append(f"  Tags: {', '.join(tags) if tags else 'none'}")
-    if extended:
-        lines.append(f"  Notes: {extended}")
+    if description:
+        lines.append(f"  Notes: {description}")
     lines.append(f"  Date: {date}")
     lines.append("")
     return lines
@@ -368,6 +355,12 @@ async def list_tools() -> list[Tool]:
     ]
 
 
+async def fetch_collective_bookmarks() -> list[dict]:
+    """Fetch all bloom-houston tagged bookmarks from public feed."""
+    client = get_client()
+    return await client.get_tag_feed(COLLECTIVE_TAG, count=100)
+
+
 @server.call_tool()
 async def call_tool(name: str, arguments: dict) -> list[TextContent]:
     """Handle tool calls."""
@@ -400,39 +393,8 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             )
         else:
             return [TextContent(type="text", text=f"Unknown tool: {name}")]
-
-    except PinboardAPIError as e:
-        error_msg = f"Pinboard API Error: {e.message}"
-        if e.error_code:
-            error_msg += f" (code: {e.error_code})"
-        return [TextContent(type="text", text=error_msg)]
-
-
-async def fetch_collective_bookmarks() -> list[dict]:
-    """Fetch all bloom-houston tagged bookmarks."""
-    client = get_client()
-    return await client.get_tag_bookmarks(COLLECTIVE_TAG)
-
-
-def extract_bookmark_field(b: dict, *fields: str) -> str:
-    """Extract a field from bookmark, trying multiple possible keys."""
-    for field in fields:
-        if field in b and b[field]:
-            return b[field]
-    return ""
-
-
-def get_bookmark_tags(b: dict) -> list[str]:
-    """Extract tags from bookmark, handling different formats."""
-    tags = b.get("tags", b.get("t", []))
-    if isinstance(tags, str):
-        return tags.split()
-    return tags or []
-
-
-def get_bookmark_user(b: dict) -> str:
-    """Extract username from bookmark."""
-    return b.get("user", b.get("a", "Unknown"))
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error: {str(e)}")]
 
 
 async def search_collective(
@@ -441,102 +403,106 @@ async def search_collective(
     user: Optional[str] = None,
     limit: int = 20
 ) -> list[TextContent]:
-    """Search across all bloom-houston bookmarks."""
-    client = get_client()
+    """Search across collective bookmarks."""
+    bookmarks = await fetch_collective_bookmarks()
 
-    # If we have a text query, use the search endpoint
-    if query:
-        # Search with bloom-houston tag constraint
-        search_tag = f"{COLLECTIVE_TAG}"
-        if tag:
-            search_tag = f"{COLLECTIVE_TAG}+{tag}"
-        bookmarks = await client.search_site(query, tag=search_tag, count=limit * 2)
-    else:
-        # Get all collective bookmarks and filter locally
-        bookmarks = await client.get_tag_bookmarks(COLLECTIVE_TAG)
-
+    # Filter bookmarks
     results = []
-    for bookmark in bookmarks:
-        # Apply user filter
-        if user and get_bookmark_user(bookmark).lower() != user.lower():
+    for b in bookmarks:
+        # Filter by user
+        if user and get_bookmark_user(b).lower() != user.lower():
             continue
 
-        # Apply tag filter (if not already applied via API)
-        if tag and not query:
-            bookmark_tags = [t.lower() for t in get_bookmark_tags(bookmark)]
+        # Filter by additional tag
+        if tag:
+            bookmark_tags = [t.lower() for t in get_bookmark_tags(b)]
             if tag.lower() not in bookmark_tags:
                 continue
 
-        results.append(bookmark)
+        # Filter by search query
+        if query:
+            query_lower = query.lower()
+            title = get_bookmark_title(b).lower()
+            description = get_bookmark_description(b).lower()
+            url = get_bookmark_url(b).lower()
+            tags = " ".join(get_bookmark_tags(b)).lower()
+
+            if not any(query_lower in field for field in [title, description, url, tags]):
+                continue
+
+        results.append(b)
+
         if len(results) >= limit:
             break
 
     if not results:
-        return [TextContent(type="text", text="No bookmarks found matching your criteria.")]
+        return [TextContent(type="text", text="No matching bookmarks found.")]
 
-    output_lines = [f"Found {len(results)} bookmark(s):\n"]
+    output_lines = [f"Found {len(results)} matching bookmark(s):\n"]
     for b in results:
         output_lines.extend(format_bookmark(b))
-
-    # Add rate limit info
-    output_lines.append(f"\n_{client.get_rate_limit_status()}_")
 
     return [TextContent(type="text", text="\n".join(output_lines))]
 
 
 async def get_recent(tag: Optional[str] = None, limit: int = 10) -> list[TextContent]:
-    """Get most recently shared bookmarks."""
-    client = get_client()
+    """Get most recent bookmarks from the collective."""
+    bookmarks = await fetch_collective_bookmarks()
 
-    # Combine bloom-houston with optional additional tag
-    combined_tag = COLLECTIVE_TAG
+    # Filter by additional tag if specified
     if tag:
-        combined_tag = f"{COLLECTIVE_TAG}+{tag}"
+        bookmarks = [
+            b for b in bookmarks
+            if tag.lower() in [t.lower() for t in get_bookmark_tags(b)]
+        ]
 
-    bookmarks = await client.get_recent(tag=combined_tag, count=limit)
+    # Take most recent (feed is usually already sorted)
+    recent = bookmarks[:limit]
 
-    if not bookmarks:
-        return [TextContent(type="text", text="No recent bookmarks found.")]
+    if not recent:
+        msg = "No recent bookmarks found"
+        if tag:
+            msg += f" with tag '{tag}'"
+        return [TextContent(type="text", text=msg + ".")]
 
-    output_lines = [f"Most recent {len(bookmarks)} bookmark(s):\n"]
-    for b in bookmarks:
+    output_lines = [f"Recent bloom-houston bookmarks:\n"]
+    for b in recent:
         output_lines.extend(format_bookmark(b))
-
-    output_lines.append(f"\n_{client.get_rate_limit_status()}_")
 
     return [TextContent(type="text", text="\n".join(output_lines))]
 
 
 async def who_knows_about(topic: str) -> list[TextContent]:
-    """Find contributors by topic."""
-    client = get_client()
+    """Find contributors who know about a topic."""
+    bookmarks = await fetch_collective_bookmarks()
+    topic_lower = topic.lower()
 
-    # Search for the topic within collective bookmarks
-    bookmarks = await client.search_site(topic, tag=COLLECTIVE_TAG, count=100)
-
-    # Group by user
+    # Count matches per user
     user_matches = defaultdict(list)
+
     for b in bookmarks:
-        user = get_bookmark_user(b)
-        user_matches[user].append(b)
+        title = get_bookmark_title(b).lower()
+        description = get_bookmark_description(b).lower()
+        tags = " ".join(get_bookmark_tags(b)).lower()
+
+        if topic_lower in title or topic_lower in description or topic_lower in tags:
+            username = get_bookmark_user(b)
+            user_matches[username].append(b)
 
     if not user_matches:
-        return [TextContent(type="text", text=f"No contributors found with bookmarks about '{topic}'.")]
+        return [TextContent(type="text", text=f"No one in the collective has bookmarks about '{topic}'.")]
 
-    # Sort by number of relevant bookmarks
+    # Sort by number of matches
     sorted_users = sorted(user_matches.items(), key=lambda x: len(x[1]), reverse=True)
 
     output_lines = [f"Contributors who know about '{topic}':\n"]
-    for user, user_bookmarks in sorted_users:
-        output_lines.append(f"**{user}** - {len(user_bookmarks)} bookmark(s)")
-        for b in user_bookmarks[:3]:
-            title = extract_bookmark_field(b, "description", "d") or "No title"
-            output_lines.append(f"  - {title}")
-        if len(user_bookmarks) > 3:
-            output_lines.append(f"  - ... and {len(user_bookmarks) - 3} more")
+    for username, matches in sorted_users:
+        output_lines.append(f"**{username}** - {len(matches)} bookmark(s)")
+        for b in matches[:3]:  # Show up to 3 examples
+            output_lines.append(f"  • {get_bookmark_title(b)}")
+        if len(matches) > 3:
+            output_lines.append(f"  ... and {len(matches) - 3} more")
         output_lines.append("")
-
-    output_lines.append(f"\n_{client.get_rate_limit_status()}_")
 
     return [TextContent(type="text", text="\n".join(output_lines))]
 
@@ -544,10 +510,10 @@ async def who_knows_about(topic: str) -> list[TextContent]:
 async def find_connections(user: Optional[str] = None, min_overlap: int = 2) -> list[TextContent]:
     """Find interest overlaps between members."""
     bookmarks = await fetch_collective_bookmarks()
-    client = get_client()
 
-    # Build tag sets per user (excluding bloom-houston itself)
+    # Build user -> tags mapping
     user_tags = defaultdict(set)
+
     for b in bookmarks:
         username = get_bookmark_user(b)
         tags = set(
@@ -590,7 +556,6 @@ async def find_connections(user: Optional[str] = None, min_overlap: int = 2) -> 
             output_lines.append(f"  Shared tags: {', '.join(sorted(shared))}")
             output_lines.append("")
 
-        output_lines.append(f"\n_{client.get_rate_limit_status()}_")
         return [TextContent(type="text", text="\n".join(output_lines))]
 
     else:
@@ -615,44 +580,28 @@ async def find_connections(user: Optional[str] = None, min_overlap: int = 2) -> 
             output_lines.append(f"  Tags: {', '.join(sorted(shared))}")
             output_lines.append("")
 
-        output_lines.append(f"\n_{client.get_rate_limit_status()}_")
         return [TextContent(type="text", text="\n".join(output_lines))]
 
 
 async def who_else_saved(url: str) -> list[TextContent]:
     """Check if URL was saved by others in the network."""
-    client = get_client()
-
-    # Use the URL endpoint to get info about this URL
-    try:
-        url_info = await client.get_url_info(url)
-    except PinboardAPIError:
-        # Fall back to searching collective bookmarks
-        url_info = None
-
-    # Also check our collective bookmarks
     bookmarks = await fetch_collective_bookmarks()
     normalized_target = normalize_url(url)
 
     savers = []
     for b in bookmarks:
-        bookmark_url = extract_bookmark_field(b, "href", "u")
+        bookmark_url = get_bookmark_url(b)
         if normalize_url(bookmark_url) == normalized_target:
             savers.append({
                 "user": get_bookmark_user(b),
-                "title": extract_bookmark_field(b, "description", "d") or "No title",
+                "title": get_bookmark_title(b),
                 "tags": get_bookmark_tags(b),
-                "notes": extract_bookmark_field(b, "extended", "n"),
-                "date": extract_bookmark_field(b, "time", "dt") or "Unknown"
+                "notes": get_bookmark_description(b),
+                "date": get_bookmark_date(b)
             })
 
     if not savers:
-        msg = f"No one in the bloom-houston collective has saved this URL: {url}"
-        if url_info and url_info.get("status") == "ok":
-            total_saves = url_info.get("total_saves", url_info.get("count", 0))
-            if total_saves:
-                msg += f"\n\n(Note: {total_saves} users sitewide have saved this URL)"
-        return [TextContent(type="text", text=msg)]
+        return [TextContent(type="text", text=f"No one in the bloom-houston collective has saved this URL: {url}")]
 
     output_lines = [f"Found {len(savers)} member(s) who saved this URL:\n"]
     for s in savers:
@@ -664,15 +613,12 @@ async def who_else_saved(url: str) -> list[TextContent]:
         output_lines.append(f"  Saved: {s['date']}")
         output_lines.append("")
 
-    output_lines.append(f"\n_{client.get_rate_limit_status()}_")
-
     return [TextContent(type="text", text="\n".join(output_lines))]
 
 
 async def get_network_map(format: str = "json", min_shared_tags: int = 1) -> list[TextContent]:
     """Generate a relationship graph."""
     bookmarks = await fetch_collective_bookmarks()
-    client = get_client()
 
     # Build user data
     user_tags = defaultdict(set)
@@ -718,9 +664,6 @@ async def get_network_map(format: str = "json", min_shared_tags: int = 1) -> lis
             weight = conn["weight"]
             lines.append(f"    {source} ---|{weight} shared| {target}")
 
-        lines.append("")
-        lines.append(f"_{client.get_rate_limit_status()}_")
-
         return [TextContent(type="text", text="\n".join(lines))]
 
     else:
@@ -739,10 +682,6 @@ async def get_network_map(format: str = "json", min_shared_tags: int = 1) -> lis
                 "total_members": len(users),
                 "total_connections": len(connections),
                 "total_bookmarks": sum(user_bookmark_count.values())
-            },
-            "rate_limit": {
-                "requests_remaining": client.rate_limit.requests_remaining,
-                "reset_time": client.rate_limit.reset_time
             }
         }
 
