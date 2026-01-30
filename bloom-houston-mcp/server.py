@@ -27,10 +27,12 @@ NEW SMART TOOLS (reduce API calls):
 """
 
 import asyncio
+import json
 import os
 import time
 from collections import defaultdict
 from datetime import datetime
+from pathlib import Path
 from typing import Optional
 from urllib.parse import urlparse, quote
 
@@ -44,9 +46,55 @@ PINBOARD_API_TOKEN = os.environ.get("PINBOARD_API_TOKEN", "")
 COLLECTIVE_TAG = "bloom-houston"
 CACHE_TTL_SECONDS = 300  # 5 minutes
 
+# Persistent storage for known members
+DATA_DIR = Path(os.environ.get("BLOOM_DATA_DIR", Path.home() / ".bloom-houston"))
+KNOWN_MEMBERS_FILE = DATA_DIR / "known_members.json"
+
 # Simple in-memory cache
 _cache = {}
 _cache_timestamps = {}
+
+
+# =============================================================================
+# PERSISTENT MEMBER TRACKING
+# =============================================================================
+
+def ensure_data_dir():
+    """Ensure the data directory exists."""
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def load_known_members() -> dict:
+    """Load known members from persistent storage."""
+    ensure_data_dir()
+    if KNOWN_MEMBERS_FILE.exists():
+        try:
+            with open(KNOWN_MEMBERS_FILE, "r") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError):
+            return {"members": {}, "last_check": None}
+    return {"members": {}, "last_check": None}
+
+
+def save_known_members(data: dict):
+    """Save known members to persistent storage."""
+    ensure_data_dir()
+    with open(KNOWN_MEMBERS_FILE, "w") as f:
+        json.dump(data, f, indent=2)
+
+
+def add_known_member(username: str, first_seen: str, first_bookmark: dict):
+    """Add a new member to the known members list."""
+    data = load_known_members()
+    if username.lower() not in {k.lower() for k in data["members"]}:
+        data["members"][username] = {
+            "first_seen": first_seen,
+            "first_bookmark_title": first_bookmark.get("title", ""),
+            "first_bookmark_url": first_bookmark.get("url", "")
+        }
+        save_known_members(data)
+        return True
+    return False
 
 server = Server("bloom-houston")
 
@@ -799,6 +847,69 @@ async def list_tools():
                 "type": "object",
                 "properties": {}
             }
+        ),
+        
+        # =================================================================
+        # MEMBER DISCOVERY TOOLS
+        # =================================================================
+        Tool(
+            name="discover_new_members",
+            description=(
+                "Check for NEW contributors to any bloom-related tag. "
+                "Compares current contributors against a stored list of known members "
+                "and returns anyone who hasn't been seen before. "
+                "Great for community onboarding - discover new people joining the network!"
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "tag": {
+                        "type": "string",
+                        "description": "Tag to monitor (default: 'bloom-houston'). Use 'bloom' for broader discovery.",
+                        "default": "bloom-houston"
+                    },
+                    "auto_add": {
+                        "type": "boolean",
+                        "description": "Automatically add new members to known list (default: true)",
+                        "default": True
+                    }
+                }
+            }
+        ),
+        Tool(
+            name="list_known_members",
+            description=(
+                "List all known members of the bloom network that have been discovered. "
+                "Shows when they were first seen and their first bookmark."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "sort_by": {
+                        "type": "string",
+                        "enum": ["first_seen", "username"],
+                        "description": "Sort order (default: first_seen, newest first)",
+                        "default": "first_seen"
+                    }
+                }
+            }
+        ),
+        Tool(
+            name="reset_known_members",
+            description=(
+                "Clear the known members list to start fresh. "
+                "Use with caution - this forgets all previously discovered members."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "confirm": {
+                        "type": "boolean",
+                        "description": "Must be true to confirm reset"
+                    }
+                },
+                "required": ["confirm"]
+            }
         )
     ]
 
@@ -1474,6 +1585,137 @@ async def call_tool(name: str, arguments: dict):
         _cache.clear()
         _cache_timestamps.clear()
         return [TextContent(type="text", text="✓ Cache cleared. Next API calls will fetch fresh data.")]
+    
+    
+    # =================================================================
+    # MEMBER DISCOVERY TOOLS
+    # =================================================================
+    
+    elif name == "discover_new_members":
+        tag = arguments.get("tag", COLLECTIVE_TAG)
+        auto_add = arguments.get("auto_add", True)
+        
+        # Fetch current bookmarks for the tag
+        bookmarks = await fetch_public_tag_feed(tag, 200)
+        
+        if not bookmarks:
+            return [TextContent(type="text", text=f"No bookmarks found with tag '{tag}'")]
+        
+        # Load known members
+        known_data = load_known_members()
+        known_usernames = {k.lower() for k in known_data["members"]}
+        
+        # Find current contributors
+        current_contributors = {}
+        for b in bookmarks:
+            username = get_bookmark_user(b)
+            if username.lower() not in current_contributors:
+                current_contributors[username.lower()] = {
+                    "username": username,
+                    "title": get_bookmark_title(b),
+                    "url": get_bookmark_url(b),
+                    "date": get_bookmark_date(b),
+                    "tags": get_bookmark_tags(b)
+                }
+        
+        # Find new members
+        new_members = []
+        for username_lower, data in current_contributors.items():
+            if username_lower not in known_usernames:
+                new_members.append(data)
+                
+                if auto_add:
+                    add_known_member(
+                        data["username"],
+                        datetime.utcnow().isoformat() + "Z",
+                        {"title": data["title"], "url": data["url"]}
+                    )
+        
+        # Update last check time
+        known_data["last_check"] = datetime.utcnow().isoformat() + "Z"
+        save_known_members(known_data)
+        
+        # Format response
+        if not new_members:
+            return [TextContent(type="text", text=(
+                f"No new members found for tag '{tag}'.\n\n"
+                f"**Known members:** {len(known_usernames)}\n"
+                f"**Current contributors:** {len(current_contributors)}\n"
+                f"**Last check:** {known_data.get('last_check', 'never')}"
+            ))]
+        
+        lines = [
+            f"🎉 **{len(new_members)} new member(s) discovered!**\n",
+            f"Tag: `{tag}`\n"
+        ]
+        
+        for m in new_members:
+            lines.append(f"### {m['username']}")
+            lines.append(f"**First bookmark:** {m['title']}")
+            lines.append(f"**URL:** {m['url']}")
+            lines.append(f"**Tags:** {', '.join(m['tags']) if m['tags'] else 'none'}")
+            lines.append(f"**Date:** {m['date']}")
+            lines.append("")
+        
+        if auto_add:
+            lines.append("✓ Added to known members list")
+        else:
+            lines.append("ℹ️ Not added to known members (auto_add=false)")
+        
+        return [TextContent(type="text", text="\n".join(lines))]
+    
+    
+    elif name == "list_known_members":
+        sort_by = arguments.get("sort_by", "first_seen")
+        
+        known_data = load_known_members()
+        members = known_data.get("members", {})
+        
+        if not members:
+            return [TextContent(type="text", text=(
+                "No known members yet.\n\n"
+                "Use `discover_new_members` to start tracking contributors to bloom tags."
+            ))]
+        
+        # Sort members
+        member_list = [(username, data) for username, data in members.items()]
+        
+        if sort_by == "first_seen":
+            member_list.sort(key=lambda x: x[1].get("first_seen", ""), reverse=True)
+        else:
+            member_list.sort(key=lambda x: x[0].lower())
+        
+        lines = [
+            f"# Known Bloom Network Members",
+            f"**Total:** {len(members)}",
+            f"**Last check:** {known_data.get('last_check', 'never')}",
+            ""
+        ]
+        
+        for username, data in member_list:
+            lines.append(f"### {username}")
+            lines.append(f"- **First seen:** {data.get('first_seen', 'unknown')}")
+            lines.append(f"- **First bookmark:** {data.get('first_bookmark_title', 'unknown')}")
+            if data.get('first_bookmark_url'):
+                lines.append(f"- **URL:** {data.get('first_bookmark_url')}")
+            lines.append("")
+        
+        return [TextContent(type="text", text="\n".join(lines))]
+    
+    
+    elif name == "reset_known_members":
+        confirm = arguments.get("confirm", False)
+        
+        if not confirm:
+            return [TextContent(type="text", text=(
+                "⚠️ This will clear all known members and cannot be undone.\n\n"
+                "To confirm, call with `confirm: true`"
+            ))]
+        
+        # Reset the file
+        save_known_members({"members": {}, "last_check": None})
+        
+        return [TextContent(type="text", text="✓ Known members list has been reset. All members cleared.")]
     
     
     return [TextContent(type="text", text=f"Unknown tool: {name}")]
