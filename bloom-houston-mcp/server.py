@@ -27,7 +27,7 @@ from mcp.types import Tool, TextContent
 # Constants
 PINBOARD_API_BASE = "https://api.pinboard.in/v1"
 PINBOARD_FEEDS_BASE = "https://feeds.pinboard.in"
-COLLECTIVE_TAG = "bloom-houston"
+COLLECTIVE_TAG = "bloom"
 CACHE_TTL_SECONDS = 300  # 5 minutes
 
 
