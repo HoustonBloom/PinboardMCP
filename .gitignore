@@ -1,10 +1,5 @@
+# Don't commit the real config — it contains your API token!
+claude_desktop_config.json
+
+# Python cache (auto-generated when you run the server)
 __pycache__/
-*.py[cod]
-*$py.class
-*.egg-info/
-dist/
-build/
-.eggs/
-*.egg
-.venv/
-venv/
