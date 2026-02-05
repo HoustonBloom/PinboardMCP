@@ -160,6 +160,23 @@ COLLECTIVE_TAG = "bloom"  # Find all bloom-tagged resources globally
 
 The tools will find anyone using the bloom convention, and you can filter by location in your queries.
 
+Generate Your Own Viewer
+Want a custom version for your city or network? Ask Claude:
+
+Prompt:
+"Connect to the Pinboard MCP and create a Bloom Network directory artifact. Fetch all bookmarks tagged with bloom and [your-city]. Include:
+
+Generative AI search that matches user intent to resources
+Topic tag filtering
+A way for people to see how to contribute
+Clean, accessible design
+
+Pull the real data from my Pinboard account and embed it in the artifact."
+
+Or for a simpler static version:
+
+"Query my Pinboard for all bookmarks tagged bloom and [your-city], then create a searchable directory artifact with those resources."
+
 ## Troubleshooting
 
 ### "python.exe is not recognized"
