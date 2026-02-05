@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "pinboard": {
+      "command": "C:\\Path\\To\\Your\\python.exe",
+      "args": [
+        "C:\\Path\\To\\Your\\bloom-houston-mcp\\server.py"
+      ],
+      "env": {
+        "PINBOARD_API_TOKEN": "your-username:YOUR_API_TOKEN_HERE"
+      }
+    }
+  }
+}
