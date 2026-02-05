@@ -160,9 +160,9 @@ COLLECTIVE_TAG = "bloom"  # Find all bloom-tagged resources globally
 
 The tools will find anyone using the bloom convention, and you can filter by location in your queries.
 
-## Generate Your Own Viewer: https://claude.ai/public/artifacts/c5a8be0f-f34d-4749-809f-432fe4995613 
+## Generate Your Own Viewer 
 
-Example viewer: 
+Example viewer: https://claude.ai/public/artifacts/c5a8be0f-f34d-4749-809f-432fe4995613
 
 Want a custom version for your city or network? Ask Claude:
 
