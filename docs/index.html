@@ -73,6 +73,11 @@ img{max-width:100%;height:auto;display:block}
 .measure{max-width:var(--measure)}
 
 .panel{padding-block:var(--s9);position:relative}
+/* The topbar is sticky at the top, so a jump from the nav parks the section's
+   heading underneath it. Every anchor target reserves the bar's height plus a
+   little air. --topbar-h is measured, not guessed: 56px of .topbar-in
+   min-height and its 1px bottom border. */
+section[id],footer[id]{scroll-margin-top:calc(var(--topbar-h) + var(--s3))}
 .panel-dark{background:var(--green-deep);color:var(--on-dark)}
 .panel-tint{background:var(--cream-2)}
 .eyebrow{display:inline-block;font-family:var(--mono);font-size:var(--t-micro);
@@ -153,18 +158,68 @@ h1 code,h2 code,h3 code{background:none;padding:0;font-size:.78em;letter-spacing
 .tag.loc{border-color:var(--gold);color:var(--gold);border-style:dashed}
 
 /* ── flow diagram ─────────────────────────────────────────────────────────────
-   CSS classes rather than var() in presentation attributes: the sibling page
-   gets away with the attribute form, but a class is the thing that is certain
-   to resolve everywhere, and the labels here carry the whole argument. */
-.flow{display:block;max-width:660px;margin:var(--s7) auto 0}
-.flow svg{max-width:100%;height:auto}
-.flow .l-key{font-family:var(--mono);font-size:14px;letter-spacing:2px;fill:var(--ink)}
-.flow .l-sub{font-family:var(--sans);font-size:12.5px;fill:var(--ink-softer)}
-.flow .l-side{font-family:var(--mono);font-size:11px;fill:var(--gold)}
-.flow .l-key-d{font-family:var(--mono);font-size:14px;letter-spacing:2px;fill:var(--butter)}
-.flow .l-sub-d{font-family:var(--sans);font-size:12.5px;fill:var(--on-dark-soft)}
+   Built from boxes that size to their own text, not from text placed at
+   measured coordinates. The first version hand-placed every label inside a
+   fixed 620-wide SVG canvas, and SVG text does not wrap: "your account, your
+   bookmarks" ran 19px past its box and the longer account labels ran further,
+   the three boxes came out ragged because each was given its own height, and
+   the two dark boxes were a different width from the row above them. Boxes
+   cannot have those bugs, and on a phone the row stacks instead of scaling one
+   fixed canvas down to unreadable. Only the connectors are drawn, because
+   lines are safe to place by hand. */
+.flow{margin:var(--s7) auto 0;max-width:660px}
+.flow-row{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s3)}
+/* Stacked, the three accounts sit in one column, and at the row's own 12px gap
+   they read as one chain — your Pinboard, then houston, then your friend's —
+   which is the opposite of the point. They are three independent tracks, so
+   stacked they get a gap big enough to say so. */
+@media (max-width:620px){.flow-row{grid-template-columns:1fr;gap:var(--s7)}}
+.fcol{display:flex;flex-direction:column;min-width:0}
+/* the account box takes the slack so all three tops and bottoms line up
+   whatever length its own caption runs to */
+.fcol .fbox{flex:1}
+.fbox{background:var(--cream);border:2px solid var(--green);border-radius:var(--radius);
+  padding:var(--s3) var(--s4);min-width:0}
+.fb-k{font-family:var(--mono);font-size:var(--t-xs);letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink);line-height:1.35}
+.fb-s{font-family:var(--sans);font-size:var(--t-micro);color:var(--ink-softer);
+  margin-top:var(--s1);line-height:1.55}
+.ftag{border:2px dashed var(--gold);border-radius:var(--radius);padding:var(--s3) var(--s2);
+  font-family:var(--mono);font-size:var(--t-xs);color:var(--gold);text-align:center;
+  overflow-wrap:anywhere;min-width:0}
+.fwide{background:var(--green);border:2px solid var(--green);border-radius:var(--radius);
+  padding:var(--s4) var(--s5);min-width:0}
+.fwide .fb-k{color:var(--butter)}
+.fwide .fb-s{color:var(--on-dark-soft)}
+.fdeep{background:var(--green-deep);border-color:var(--green-deep)}
+/* one arrow, used at every step: a rule with a chevron turned out of two
+   borders, so it needs no glyph and no second asset */
+.fdown{display:block;position:relative;width:2px;height:34px;background:var(--green);
+  margin-inline:auto}
+.fdown::after{content:"";position:absolute;left:50%;bottom:0;width:9px;height:9px;
+  border-right:2px solid var(--green);border-bottom:2px solid var(--green);
+  transform:translate(-50%,1px) rotate(45deg)}
+/* the three tracks joining into one. A column centre is not a flat one sixth
+   of the width: with three equal columns and a gap g, each column is
+   (W - 2g)/3 wide, so the first centre is W/6 - g/3 and the last is its
+   mirror. At 660 wide with a 12px gap that is 106, not 110 — the four pixels
+   showed as risers landing off the boxes they come from. */
+.fmerge{position:relative;height:30px;--fm-in:calc(16.666% - (var(--s3) / 3))}
+.fmerge::before{content:"";position:absolute;top:28px;left:var(--fm-in);right:var(--fm-in);
+  height:2px;background:var(--green)}
+.fmerge i{position:absolute;top:0;height:28px;width:2px;background:var(--green)}
+.fm-a{left:var(--fm-in)} .fm-b{left:50%} .fm-c{right:var(--fm-in)}
+/* stacked, there is one track already, so the bracket has nothing to join */
+@media (max-width:620px){.fmerge{display:none}}
+/* the arrow that the server sits on, labelled beside it rather than under it
+   so the label does not push the boxes apart */
+.fstep{position:relative;height:34px}
+.fstep .fdown{position:absolute;left:50%;transform:translateX(-50%)}
+.fstep-l{position:absolute;left:calc(50% + 16px);top:50%;transform:translateY(-50%);
+  font-family:var(--mono);font-size:var(--t-micro);color:var(--gold);letter-spacing:.06em;
+  white-space:nowrap}
 .flow figcaption{font-family:var(--mono);font-size:var(--t-micro);letter-spacing:.06em;
-  text-transform:uppercase;color:var(--ink-soft);text-align:center;padding-top:var(--s4)}
+  text-transform:uppercase;color:var(--ink-soft);text-align:center;padding-top:var(--s5)}
 
 /* ── step cards ───────────────────────────────────────────────────────────────
    One column at every width, as on the sibling page: a three-column grid
@@ -309,53 +364,53 @@ h1 code,h2 code,h3 code{background:none;padding:0;font-size:.78em;letter-spacing
     </div>
 
     <figure class="flow">
-      <svg viewBox="0 0 620 400" width="100%" role="img" aria-label="Three people each save a bookmark to their own Pinboard account and tag it bloom plus a city. The shared layer is the union of those tags, read back through the MCP server into Claude. There is no server in the middle that anyone owns.">
-        <!-- three independent accounts -->
-        <rect x="8"   y="14" width="180" height="64" rx="6" fill="var(--cream)" stroke="var(--green)" stroke-width="2"/>
-        <text class="l-key" x="24" y="40">YOUR PINBOARD</text>
-        <text class="l-sub" x="24" y="60">your account, your bookmarks</text>
+      <p class="sr-only">Three people each save a bookmark to their own separate Pinboard
+        account and tag it bloom plus a place. The shared collective is simply everything
+        carrying that tag; this MCP server reads it back so Claude can answer questions
+        about it. Nothing sits in the middle.</p>
 
-        <rect x="220" y="14" width="180" height="64" rx="6" fill="var(--cream)" stroke="var(--green)" stroke-width="2"/>
-        <text class="l-key" x="236" y="40">HERS</text>
-        <text class="l-sub" x="236" y="60">a different account entirely</text>
+      <div class="flow-row">
+        <div class="fcol">
+          <div class="fbox">
+            <p class="fb-k">Your Pinboard</p>
+            <p class="fb-s">your account, your bookmarks</p>
+          </div>
+          <span class="fdown" aria-hidden="true"></span>
+          <p class="ftag">bloom + houston</p>
+        </div>
+        <div class="fcol">
+          <div class="fbox">
+            <p class="fb-k">Your friend&rsquo;s</p>
+            <p class="fb-s">a different account entirely</p>
+          </div>
+          <span class="fdown" aria-hidden="true"></span>
+          <p class="ftag">bloom + austin</p>
+        </div>
+        <div class="fcol">
+          <div class="fbox">
+            <p class="fb-k">A stranger&rsquo;s</p>
+            <p class="fb-s">nobody had to sign up</p>
+          </div>
+          <span class="fdown" aria-hidden="true"></span>
+          <p class="ftag">bloom + global</p>
+        </div>
+      </div>
 
-        <rect x="432" y="14" width="180" height="64" rx="6" fill="var(--cream)" stroke="var(--green)" stroke-width="2"/>
-        <text class="l-key" x="448" y="40">HIS</text>
-        <text class="l-sub" x="448" y="60">nobody had to sign up</text>
+      <div class="fmerge" aria-hidden="true"><i class="fm-a"></i><i class="fm-b"></i><i class="fm-c"></i></div>
+      <span class="fdown" aria-hidden="true"></span>
 
-        <!-- the tag act -->
-        <path d="M98 82 v26"  stroke="var(--green)" stroke-width="2" fill="none"/>
-        <path d="M92 104 l6 8 l6 -8"  fill="none" stroke="var(--green)" stroke-width="2"/>
-        <path d="M310 82 v26" stroke="var(--green)" stroke-width="2" fill="none"/>
-        <path d="M304 104 l6 8 l6 -8" fill="none" stroke="var(--green)" stroke-width="2"/>
-        <path d="M522 82 v26" stroke="var(--green)" stroke-width="2" fill="none"/>
-        <path d="M516 104 l6 8 l6 -8" fill="none" stroke="var(--green)" stroke-width="2"/>
+      <div class="fbox fwide">
+        <p class="fb-k">The collective</p>
+        <p class="fb-s">everything tagged bloom, anywhere, by anyone</p>
+      </div>
 
-        <rect x="8"   y="120" width="180" height="52" rx="6" fill="none" stroke="var(--gold)" stroke-width="2" stroke-dasharray="5 4"/>
-        <text class="l-key" x="24" y="152" style="fill:var(--gold)">bloom + houston</text>
-        <rect x="220" y="120" width="180" height="52" rx="6" fill="none" stroke="var(--gold)" stroke-width="2" stroke-dasharray="5 4"/>
-        <text class="l-key" x="236" y="152" style="fill:var(--gold)">bloom + austin</text>
-        <rect x="432" y="120" width="180" height="52" rx="6" fill="none" stroke="var(--gold)" stroke-width="2" stroke-dasharray="5 4"/>
-        <text class="l-key" x="448" y="152" style="fill:var(--gold)">bloom + global</text>
+      <p class="fstep"><span class="fdown" aria-hidden="true"></span><span class="fstep-l">this MCP server</span></p>
 
-        <!-- converge -->
-        <path d="M98 176 v20 h212 v20"  fill="none" stroke="var(--green)" stroke-width="2"/>
-        <path d="M310 176 v40"          fill="none" stroke="var(--green)" stroke-width="2"/>
-        <path d="M522 176 v20 h-212 v20" fill="none" stroke="var(--green)" stroke-width="2"/>
-        <path d="M304 212 l6 8 l6 -8"   fill="none" stroke="var(--green)" stroke-width="2"/>
+      <div class="fbox fwide fdeep">
+        <p class="fb-k">Claude, asked a question</p>
+        <p class="fb-s">who knows about mutual aid? what is new this week?</p>
+      </div>
 
-        <rect x="120" y="228" width="380" height="64" rx="6" fill="var(--green)" stroke="var(--green)" stroke-width="2"/>
-        <text class="l-key-d" x="140" y="254">THE COLLECTIVE</text>
-        <text class="l-sub-d" x="140" y="274">everything tagged bloom, anywhere, by anyone</text>
-
-        <path d="M310 296 v22" stroke="var(--green)" stroke-width="2" fill="none"/>
-        <path d="M304 314 l6 8 l6 -8" fill="none" stroke="var(--green)" stroke-width="2"/>
-        <text class="l-side" x="336" y="313">this MCP server</text>
-
-        <rect x="120" y="326" width="380" height="60" rx="6" fill="var(--green-deep)" stroke="var(--green-deep)" stroke-width="2"/>
-        <text class="l-key-d" x="140" y="352">CLAUDE, ASKED A QUESTION</text>
-        <text class="l-sub-d" x="140" y="372">who knows about mutual aid? what is new this week?</text>
-      </svg>
       <figcaption>No server in the middle. Just a word people agreed to use.</figcaption>
     </figure>
   </div>
