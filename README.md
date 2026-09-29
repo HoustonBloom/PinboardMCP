@@ -2,6 +2,8 @@
 
 A Model Context Protocol (MCP) server that connects Claude to Pinboard, enabling AI-assisted bookmark management and collective knowledge discovery for the Bloom network.
 
+**[Read the landing page →](https://houstonbloom.github.io/PinboardMCP/)** — what this is, the tagging convention, and setup in five steps. (Source: [`docs/index.html`](docs/index.html).)
+
 ## The Bloom Tagging Convention
 
 **`bloom`** is a signal tag that means: *"I want this resource surfaced to others in the network."*
