@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-style="bloom">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -8,461 +8,439 @@
 <meta property="og:title" content="Bloom Pinboard MCP">
 <meta property="og:description" content="Tag a link bloom. The network finds it. An MCP server that turns Pinboard into a shared knowledge layer.">
 <meta property="og:type" content="website">
+
+<!-- Built on HoustonBloom/design-system: style `bloom`, template `website`.
+     This page declares a style and a template and writes only its own content.
+     It coins no token, and it rebuilds nothing the system already has.
+
+     Everything under vendor/ is a copy carrying a version stamp; an edit made
+     there is lost on the next sync. Refresh with:
+       node sync.mjs --styles          "<this folder>"
+       node sync.mjs --template website "<this folder>"
+       node sync.mjs <component>        "<this folder>"
+
+     FONT LOADING: the deployed arm of the two styles/bloom.css offers. The
+     vendored token bundle carries no @import by design, so the page loads the
+     active style's faces itself and pays for no other style's. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- The sibling pages on houstonbloom.github.io inline these as base64 so they
-     work with no network. This page is only ever served over the web, so it
-     links them instead and stays a file a person can read. Same five faces,
-     same weights, same roles. -->
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="vendor/styles.css">
+<link rel="stylesheet" href="vendor/action-link/component.css">
+<link rel="stylesheet" href="vendor/kind-label/component.css">
+<link rel="stylesheet" href="vendor/tool-list/component.css">
+<link rel="stylesheet" href="vendor/nav-bar/component.css">
+<link rel="stylesheet" href="vendor/templates/website.css">
+
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{-webkit-text-size-adjust:100%}
-/* ── Tokens, carried verbatim from the Houston Bloom site so this page and
-   video-tools.html are the same system rather than two things that rhyme.
-   palette: green and yellow only. butter is 1.12:1 on cream, so it is a
-   dark-panel colour only. gold is the yellow that survives on cream. ────── */
-:root{
-  --cream:#ece5d6; --cream-2:#e3dccb; --cream-3:#d8d1bf;
-  --ink:#1a1a1a; --ink-soft:#4a4439; --ink-softer:#5c5648;
-  --green:#2d5a3f; --green-deep:#0f2a1c; --green-mid:#1e4630; --green-light:#4a8a62;
-  --gold:#6b4613; --gold-bright:#c8951f;
-  --gold-wash:rgba(107,70,19,.09);
-  --green-wash:rgba(45,90,63,.08); --butter:#f3d88b; --butter-wash:#f7ecc7;
-  --on-dark:#ece5d6; --on-dark-soft:#c6bfae;
-  --edge:rgba(26,26,26,.13); --edge-dark:rgba(236,229,214,.2);
-
-  --t-micro:.68rem; --t-mono:.74rem; --t-xs:.82rem; --t-sm:.92rem;
-  --t-base:1rem; --t-md:1.1rem; --t-lg:1.3rem;
-  --t-xl:clamp(1.45rem,1.1rem + 1.6vw,1.95rem);
-  --t-2xl:clamp(1.9rem,1.35rem + 2.6vw,2.9rem);
-  --t-3xl:clamp(2.5rem,1.6rem + 4.4vw,4.3rem);
-
-  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px;
-  --s7:48px; --s8:64px; --s9:96px; --s10:120px;
-
-  --shell:1080px; --measure:62ch; --radius:10px;
-  --topbar-h:57px;
-
-  --display:'DM Serif Display',Georgia,serif;
-  --sans:'Plus Jakarta Sans',system-ui,sans-serif;
-  --mono:'JetBrains Mono',ui-monospace,monospace;
-  --script:'Caveat',cursive;
-  --alt:'Space Grotesk',system-ui,sans-serif;
+/* ---------------------------------------------------------------------------
+   This page's own content. Composition only: which sections exist, how the
+   diagram is arranged, how a prompt window is put together. Colour, type,
+   radius, depth and motion all read tokens, per styles/CONTRACT.md — there is
+   no hex, no font-family string and no raw radius below this line.
+   --------------------------------------------------------------------------- */
+html, body { margin: 0; }
+/* The template paints .tpl--website, not the document. Without this the body
+   is transparent and anything the wrapper does not cover shows the browser's
+   white. site/index.src.html sets the same pair. */
+body { background: var(--color-bg); color: var(--color-text); }
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
 }
-@media (prefers-reduced-motion:reduce){
-  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;
-    transition-duration:.001ms !important;scroll-behavior:auto !important}
+.skip { position: absolute; left: -9999px; top: 0; }
+.skip:focus {
+  position: fixed; left: var(--space-lg); top: var(--space-md); z-index: 200;
+  width: auto; height: auto;
+  background: var(--color-accent); color: var(--color-text-inverse);
+  font-weight: 800; font-size: var(--text-body-sm);
+  padding: var(--space-md) var(--space-lg); border-radius: var(--radius-lg);
+  text-decoration: none;
 }
-html{scroll-behavior:smooth}
-body{background:var(--cream);color:var(--ink);font-family:var(--sans);font-size:var(--t-base);
-  line-height:1.62;-webkit-font-smoothing:antialiased;overflow-x:hidden}
-.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
-  clip:rect(0,0,0,0);white-space:nowrap;border:0}
-.skip{position:absolute;left:-9999px;top:0}
-.skip:focus{position:fixed;left:var(--s5);top:var(--s3);z-index:200;width:auto;height:auto;
-  background:var(--green);color:var(--cream);font-weight:800;font-size:var(--t-sm);
-  padding:var(--s3) var(--s5);border-radius:var(--radius);text-decoration:none}
-a{color:inherit}
-img{max-width:100%;height:auto;display:block}
-:focus-visible{outline:3px solid var(--green-light);outline-offset:3px;border-radius:2px}
-.panel-dark :focus-visible{outline-color:var(--butter)}
-
-.shell{width:100%;max-width:var(--shell);margin-inline:auto;padding-inline:var(--s5)}
-@media (min-width:720px){.shell{padding-inline:var(--s6)}}
-.measure{max-width:var(--measure)}
-
-.panel{padding-block:var(--s9);position:relative}
-/* The topbar is sticky at the top, so a jump from the nav parks the section's
-   heading underneath it. Every anchor target reserves the bar's height plus a
-   little air. --topbar-h is measured, not guessed: 56px of .topbar-in
-   min-height and its 1px bottom border. */
-section[id],footer[id]{scroll-margin-top:calc(var(--topbar-h) + var(--s3))}
-.panel-dark{background:var(--green-deep);color:var(--on-dark)}
-.panel-tint{background:var(--cream-2)}
-.eyebrow{display:inline-block;font-family:var(--mono);font-size:var(--t-micro);
-  letter-spacing:.16em;text-transform:uppercase;color:var(--gold);
-  border:1px solid var(--edge);border-radius:999px;padding:var(--s1) var(--s3);margin-bottom:var(--s4)}
-.panel-dark .eyebrow{color:var(--butter);border-color:var(--edge-dark)}
-h1,h2,h3{font-family:var(--display);font-weight:400;line-height:1.08;letter-spacing:-.01em;
-  text-wrap:balance}
-h1{font-size:var(--t-3xl)}
-h2{font-size:var(--t-2xl);margin-bottom:var(--s4)}
-h3{font-size:var(--t-lg)}
-.lede{font-size:var(--t-md);color:var(--ink-soft);max-width:var(--measure)}
-.panel-dark .lede{color:var(--on-dark-soft)}
-p+p{margin-top:var(--s4)}
-strong{font-weight:800}
-code{font-family:var(--mono);font-size:.88em;background:var(--gold-wash);color:var(--gold);
-  padding:.12em .38em;border-radius:3px;overflow-wrap:anywhere}
-/* In a heading the chip stops working. At display size the wash reads as a
-   highlighter smear rather than a tag, and the .38em of right padding parks
-   the sentence's full stop a visible gap away from the word it belongs to —
-   "Tag a link bloom ." Cropped and measured at 1440 on the hero. The mono
-   face and the gold already carry "this is a thing you type", so the box
-   comes off and the punctuation closes up. */
-h1 code,h2 code,h3 code{background:none;padding:0;font-size:.78em;letter-spacing:-.005em}
-.panel-dark code{background:rgba(243,216,139,.14);color:var(--butter)}
-
-.btn{display:inline-block;font-family:var(--sans);font-weight:800;font-size:var(--t-sm);
-  text-decoration:none;padding:var(--s3) var(--s5);border-radius:var(--radius);
-  background:var(--green);color:var(--cream);border:2px solid var(--green);
-  transition:background .2s ease,border-color .2s ease}
-.btn:hover{background:var(--green-deep);border-color:var(--green-deep)}
-.btn-ghost{background:transparent;color:var(--green);border-color:var(--green)}
-.btn-ghost:hover{background:var(--green);color:var(--cream)}
-.panel-dark .btn{background:var(--butter);color:var(--green-deep);border-color:var(--butter)}
-.panel-dark .btn:hover{background:var(--butter-wash);border-color:var(--butter-wash)}
-.panel-dark .btn-ghost{background:transparent;color:var(--butter);border-color:var(--butter)}
-.panel-dark .btn-ghost:hover{background:var(--butter);color:var(--green-deep)}
-.btn-row{display:flex;flex-wrap:wrap;gap:var(--s3);margin-top:var(--s6)}
-
-.topbar{position:sticky;top:0;z-index:60;background:rgba(236,229,214,.93);
-  backdrop-filter:blur(8px);border-bottom:1px solid var(--edge)}
-.topbar-in{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;
-  gap:var(--s2) var(--s4);min-height:56px;width:100%;max-width:var(--shell);margin-inline:auto;
-  padding-inline:var(--s5);padding-block:var(--s2)}
-.brand{display:flex;align-items:center;gap:var(--s2);text-decoration:none;font-family:var(--sans);
-  font-weight:800;font-size:var(--t-sm);color:var(--ink)}
-.brand svg{width:22px;height:22px;flex:none;color:var(--green)}
-.navlinks{display:flex;flex-wrap:wrap;gap:var(--s1);list-style:none;font-family:var(--mono);
-  font-size:var(--t-micro);letter-spacing:.1em;text-transform:uppercase}
-.navlinks a{display:block;padding:var(--s2) var(--s3);text-decoration:none;color:var(--ink-soft);
-  border-radius:999px;transition:background .2s ease,color .2s ease}
-@media (max-width:560px){
-  .navlinks{letter-spacing:.06em}
-  .navlinks a{padding-inline:var(--s2)}
+code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  color: var(--color-accent-text, var(--color-accent-deep));
+  overflow-wrap: anywhere;
 }
-.navlinks a:hover,.navlinks a[aria-current=page]{background:var(--green);color:var(--cream)}
+/* On the band's own ground code takes the particle colour. Inside the
+   tool-list it must not: that panel is --color-surface, and the particle
+   measures 1.12:1 there — the exact hazard styles/bloom.css documents, and it
+   shipped invisible until it was measured rather than looked at. */
+.section--band .section-title code,
+.section--band .section-lede code,
+/* The footer is the page's other dark ground, and the coda names the style and
+   the template in code. Green on it measured 1.93:1 at 10.6px. */
+.site-footer code { color: var(--field-particle, var(--color-accent)); }
+/* In a heading the mono face carries "this is a thing you type" on its own;
+   a tinted chip at display size reads as a highlighter smear, and its side
+   padding parks the sentence's full stop away from the word it belongs to. */
+h1 code, h2 code { font-size: 0.78em; letter-spacing: -0.005em; }
+/* Two sentences, so the line breaks between them rather than inside one: the
+   template gives h1 text-wrap:balance, which on its own broke after "The" and
+   stranded that word at the end of line one. */
+.hero h1 span { display: inline-block; }
+.hero .script {
+  font-family: var(--font-hand);
+  font-size: var(--text-body-lg);
+  color: var(--color-accent-text, var(--color-accent-deep));
+  margin: 0 0 var(--space-sm);
+}
 
-/* ── hero ─────────────────────────────────────────────────────────────────── */
-.hero{padding-block:var(--s10) var(--s9);text-align:center}
-.hero .script{font-family:var(--script);font-size:var(--t-lg);color:var(--green);margin-bottom:var(--s2)}
-.hero h1{margin-bottom:var(--s5)}
-/* Two sentences, so the line breaks between them rather than inside one.
-   text-wrap:balance on its own broke after "The", leaving that word stranded
-   at the end of line one. An inline-block per sentence keeps each whole while
-   there is room for it and still lets a sentence wrap inside itself on a
-   phone, which a <br> would not. */
-.hero h1 span{display:inline-block}
-.hero .lede{margin-inline:auto;text-align:center}
-.hero-rule{width:64px;height:2px;background:var(--green);border:0;margin:var(--s6) auto}
-.hero .btn-row{justify-content:center;margin-top:0}
+/* ---- the five tags ------------------------------------------------------ */
+/* The convention is two words, so it is set as words you type rather than
+   described in a sentence. The place tags are dashed because any place goes
+   there; bloom is solid because it is the fixed half. */
+.tags {
+  display: flex; flex-wrap: wrap; gap: var(--space-md);
+  margin-top: var(--space-xl); padding: 0; list-style: none;
+}
+.tags li {
+  font-family: var(--font-mono); font-size: var(--text-body-sm);
+  letter-spacing: 0.06em;
+  border: var(--border-width) var(--border-style) var(--color-accent);
+  border-radius: var(--radius-full);
+  padding: var(--space-sm) var(--space-lg);
+  color: var(--color-accent-text, var(--color-accent-deep));
+}
+.tags li.loc {
+  border-style: dashed;
+  border-color: var(--color-border-strong);
+  color: var(--color-text-muted);
+}
 
-/* ── the two tags ─────────────────────────────────────────────────────────────
-   The convention is two words, so it is set as two words rather than described
-   in a paragraph. Mono because they are things you type, not things you read. */
-.tags{display:flex;flex-wrap:wrap;gap:var(--s3);justify-content:center;margin-top:var(--s6)}
-.tag{font-family:var(--mono);font-size:var(--t-sm);letter-spacing:.06em;
-  border:2px solid var(--green);border-radius:999px;padding:var(--s2) var(--s5);color:var(--green)}
-.tag.loc{border-color:var(--gold);color:var(--gold);border-style:dashed}
+/* ---- the flow diagram --------------------------------------------------- */
+/* Boxes that size to their own text, not text placed at measured coordinates
+   in a fixed canvas. The first version was SVG, and SVG text does not wrap:
+   captions ran past their boxes, the boxes came out ragged, and on a phone the
+   whole canvas scaled down to unreadable. Only the connectors are drawn. */
+.flow { margin: var(--space-2xl) auto 0; max-width: var(--reading); }
+.flow-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-md); }
+.fcol { display: flex; flex-direction: column; min-width: 0; }
+.fcol .fbox { flex: 1; }   /* all three tops and bottoms line up */
+.fbox {
+  background: var(--color-surface);
+  border: var(--border-width) var(--border-style) var(--color-accent);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md) var(--space-base);
+  min-width: 0;
+}
+.fb-k {
+  font-family: var(--font-mono); font-size: var(--text-caption);
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--color-text); line-height: 1.35; margin: 0;
+}
+.fb-s {
+  font-family: var(--font-body); font-size: var(--text-caption);
+  color: var(--color-text-faint); margin: var(--space-xs) 0 0; line-height: 1.55;
+}
+.ftag {
+  border: var(--border-width) dashed var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md) var(--space-sm);
+  font-family: var(--font-mono); font-size: var(--text-caption);
+  color: var(--color-text-muted); text-align: center;
+  overflow-wrap: anywhere; min-width: 0; margin: 0;
+}
+.fwide {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  padding: var(--space-base) var(--space-lg);
+}
+.fwide .fb-k { color: var(--field-particle, var(--color-accent)); }
+.fwide .fb-s { color: var(--color-text-inverse); }
+.fdeep { background: var(--field-bg, var(--color-text)); border-color: var(--field-bg, var(--color-text)); }
+.fdeep .fb-s { color: var(--field-ink, var(--color-text-inverse)); }
+/* One arrow, used at every step: a rule with a chevron turned out of two
+   borders, so it needs no glyph and no second asset. */
+.fdown {
+  display: block; position: relative; width: 2px; height: var(--space-xl);
+  background: var(--color-accent); margin-inline: auto;
+}
+.fdown::after {
+  content: ""; position: absolute; left: 50%; bottom: 0; width: 9px; height: 9px;
+  border-right: 2px var(--border-style) var(--color-accent);
+  border-bottom: 2px var(--border-style) var(--color-accent);
+  transform: translate(-50%, 1px) rotate(45deg);
+}
+/* The three tracks joining into one. A column centre is not a flat sixth of
+   the width: with three equal columns and a gap g each column is (W - 2g)/3,
+   so the first centre is W/6 - g/3 and the last is its mirror. */
+.fmerge { position: relative; height: 30px; --fm-in: calc(16.666% - (var(--space-md) / 3)); }
+.fmerge::before {
+  content: ""; position: absolute; top: 28px; left: var(--fm-in); right: var(--fm-in);
+  height: 2px; background: var(--color-accent);
+}
+.fmerge i { position: absolute; top: 0; height: 28px; width: 2px; background: var(--color-accent); }
+.fm-a { left: var(--fm-in); } .fm-b { left: 50%; } .fm-c { right: var(--fm-in); }
+/* Stacked there is one track already, so the bracket has nothing to join, and
+   the three accounts need a gap wide enough that they do not read as one
+   chain — which is the opposite of the argument. */
+@media (max-width: 620px) {
+  .flow-row { grid-template-columns: 1fr; gap: var(--space-2xl); }
+  .fmerge { display: none; }
+}
+.fstep { position: relative; height: var(--space-xl); margin: 0; }
+.fstep .fdown { position: absolute; left: 50%; transform: translateX(-50%); }
+.fstep-l {
+  position: absolute; left: calc(50% + 16px); top: 50%; transform: translateY(-50%);
+  font-family: var(--font-mono); font-size: var(--text-caption);
+  color: var(--color-text-muted); letter-spacing: 0.06em; white-space: nowrap;
+}
+.flow figcaption {
+  font-family: var(--font-mono); font-size: var(--text-caption);
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--color-text-faint); text-align: center; padding-top: var(--space-lg);
+}
 
-/* ── flow diagram ─────────────────────────────────────────────────────────────
-   Built from boxes that size to their own text, not from text placed at
-   measured coordinates. The first version hand-placed every label inside a
-   fixed 620-wide SVG canvas, and SVG text does not wrap: "your account, your
-   bookmarks" ran 19px past its box and the longer account labels ran further,
-   the three boxes came out ragged because each was given its own height, and
-   the two dark boxes were a different width from the row above them. Boxes
-   cannot have those bugs, and on a phone the row stacks instead of scaling one
-   fixed canvas down to unreadable. Only the connectors are drawn, because
-   lines are safe to place by hand. */
-.flow{margin:var(--s7) auto 0;max-width:660px}
-.flow-row{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s3)}
-/* Stacked, the three accounts sit in one column, and at the row's own 12px gap
-   they read as one chain — your Pinboard, then houston, then your friend's —
-   which is the opposite of the point. They are three independent tracks, so
-   stacked they get a gap big enough to say so. */
-@media (max-width:620px){.flow-row{grid-template-columns:1fr;gap:var(--s7)}}
-.fcol{display:flex;flex-direction:column;min-width:0}
-/* the account box takes the slack so all three tops and bottoms line up
-   whatever length its own caption runs to */
-.fcol .fbox{flex:1}
-.fbox{background:var(--cream);border:2px solid var(--green);border-radius:var(--radius);
-  padding:var(--s3) var(--s4);min-width:0}
-.fb-k{font-family:var(--mono);font-size:var(--t-xs);letter-spacing:.1em;text-transform:uppercase;
-  color:var(--ink);line-height:1.35}
-.fb-s{font-family:var(--sans);font-size:var(--t-micro);color:var(--ink-softer);
-  margin-top:var(--s1);line-height:1.55}
-.ftag{border:2px dashed var(--gold);border-radius:var(--radius);padding:var(--s3) var(--s2);
-  font-family:var(--mono);font-size:var(--t-xs);color:var(--gold);text-align:center;
-  overflow-wrap:anywhere;min-width:0}
-.fwide{background:var(--green);border:2px solid var(--green);border-radius:var(--radius);
-  padding:var(--s4) var(--s5);min-width:0}
-.fwide .fb-k{color:var(--butter)}
-.fwide .fb-s{color:var(--on-dark-soft)}
-.fdeep{background:var(--green-deep);border-color:var(--green-deep)}
-/* one arrow, used at every step: a rule with a chevron turned out of two
-   borders, so it needs no glyph and no second asset */
-.fdown{display:block;position:relative;width:2px;height:34px;background:var(--green);
-  margin-inline:auto}
-.fdown::after{content:"";position:absolute;left:50%;bottom:0;width:9px;height:9px;
-  border-right:2px solid var(--green);border-bottom:2px solid var(--green);
-  transform:translate(-50%,1px) rotate(45deg)}
-/* the three tracks joining into one. A column centre is not a flat one sixth
-   of the width: with three equal columns and a gap g, each column is
-   (W - 2g)/3 wide, so the first centre is W/6 - g/3 and the last is its
-   mirror. At 660 wide with a 12px gap that is 106, not 110 — the four pixels
-   showed as risers landing off the boxes they come from. */
-.fmerge{position:relative;height:30px;--fm-in:calc(16.666% - (var(--s3) / 3))}
-.fmerge::before{content:"";position:absolute;top:28px;left:var(--fm-in);right:var(--fm-in);
-  height:2px;background:var(--green)}
-.fmerge i{position:absolute;top:0;height:28px;width:2px;background:var(--green)}
-.fm-a{left:var(--fm-in)} .fm-b{left:50%} .fm-c{right:var(--fm-in)}
-/* stacked, there is one track already, so the bracket has nothing to join */
-@media (max-width:620px){.fmerge{display:none}}
-/* the arrow that the server sits on, labelled beside it rather than under it
-   so the label does not push the boxes apart */
-.fstep{position:relative;height:34px}
-.fstep .fdown{position:absolute;left:50%;transform:translateX(-50%)}
-.fstep-l{position:absolute;left:calc(50% + 16px);top:50%;transform:translateY(-50%);
-  font-family:var(--mono);font-size:var(--t-micro);color:var(--gold);letter-spacing:.06em;
-  white-space:nowrap}
-.flow figcaption{font-family:var(--mono);font-size:var(--t-micro);letter-spacing:.06em;
-  text-transform:uppercase;color:var(--ink-soft);text-align:center;padding-top:var(--s5)}
+/* ---- the steps ---------------------------------------------------------- */
+/* One column at every width. A three-column grid stretches every step to its
+   tallest neighbour, so a two-sentence step becomes a column of empty paper
+   beside a prompt. The prompts fold away until they are asked for.
+   No registered component fits a numbered sequence; filed in FEEDBACK.md. */
+.steps { list-style: none; margin: var(--space-xl) 0 0; padding: 0; max-width: var(--reading); }
+.steps > li {
+  background: var(--color-surface);
+  border-top: 4px var(--border-style) var(--color-accent);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  padding: var(--space-lg) var(--space-base) var(--space-base);
+  margin-bottom: var(--space-base);
+  min-width: 0;
+}
+.steps > li:nth-child(2) { border-top-color: var(--color-accent-deep); }
+.steps > li:nth-child(4) { border-top-color: var(--color-border-strong); }
+.st-k {
+  font-family: var(--font-mono); font-size: var(--text-eyebrow);
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--color-text-faint); margin: 0;
+}
+.st-t {
+  font-family: var(--font-body); font-weight: 800; font-size: var(--text-body-lg);
+  color: var(--color-accent-deep); margin: var(--space-xs) 0 0;
+}
+.st-d { font-size: var(--text-body-sm); color: var(--color-text-muted); margin: var(--space-sm) 0 0; }
+.st-d a { color: var(--color-accent-text, var(--color-accent-deep)); font-weight: 700; }
 
-/* ── step cards ───────────────────────────────────────────────────────────────
-   One column at every width, as on the sibling page: a three-column grid
-   stretches every card to its tallest neighbour, so a two-sentence step ends
-   up as a column of empty cream beside a prompt. The prompts fold away until
-   they are asked for. */
-.hz{display:grid;grid-template-columns:1fr;gap:var(--s4);margin-top:var(--s6);
-  max-width:720px;margin-left:0;margin-right:auto}
-.hz-card{background:var(--cream);border-top:4px solid var(--hz-c,var(--green));
-  padding:var(--s5);border-radius:0 0 var(--radius) var(--radius);min-width:0}
-.hz-1{--hz-c:var(--green-deep)}
-.hz-2{--hz-c:var(--green)}
-.hz-3{--hz-c:var(--gold)}
-.hz-4{--hz-c:var(--green-light)}
-.hz-k{font-family:var(--mono);font-size:var(--t-micro);letter-spacing:.12em;text-transform:uppercase;
-  color:var(--ink-softer)}
-.hz-t{font-family:var(--sans);font-weight:800;font-size:var(--t-md);color:var(--green-deep);
-  margin-top:var(--s2)}
-.hz-d{font-size:var(--t-sm);color:var(--ink-soft);margin-top:var(--s2)}
-.hz-d a{color:var(--green);font-weight:700}
+/* ---- prompt window ------------------------------------------------------ */
+.pw { margin-top: var(--space-md); }
+.pw summary {
+  cursor: pointer; list-style: none; display: inline-block;
+  font-family: var(--font-mono); font-size: var(--text-caption);
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--color-accent-deep);
+  border: var(--border-width) var(--border-style) var(--color-accent-deep);
+  border-radius: var(--radius-sm); padding: var(--space-sm) var(--space-md);
+}
+.pw summary::-webkit-details-marker { display: none; }
+.pw summary::before { content: "+ "; }
+.pw[open] summary::before { content: "- "; }
+.pw[open] summary { background: var(--color-accent-deep); color: var(--color-text-inverse); }
+.prompt-wrap {
+  margin-top: var(--space-base);
+  border: var(--border-width) var(--border-style) var(--color-text);
+  border-radius: var(--radius-lg); overflow: hidden;
+  box-shadow: var(--shadow-raise);
+  background: var(--field-bg, var(--color-text));
+}
+.prompt-bar {
+  display: flex; align-items: center; gap: var(--space-sm);
+  background: var(--color-text); color: var(--color-text-inverse);
+  padding: var(--space-md) var(--space-base);
+  font-family: var(--font-mono); font-size: var(--text-caption); letter-spacing: 0.05em;
+}
+.prompt-bar .dot {
+  flex: none; width: 9px; height: 9px; border-radius: var(--radius-full);
+  background: var(--color-focus);
+}
+.prompt-bar .dot.y { background: var(--field-particle, var(--color-accent)); }
+.prompt-bar .dot.g { background: var(--color-accent); }
+/* flex:1 with the default min-width:auto cannot shrink below its own text, and
+   the filename then shoves the copy button past the viewport edge at 390. */
+.prompt-bar .label {
+  flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.prompt-bar .copy-btn {
+  flex: none; font-family: var(--font-body); font-weight: 700;
+  font-size: var(--text-eyebrow); letter-spacing: 0.08em; text-transform: uppercase;
+  background: var(--field-particle, var(--color-accent)); color: var(--color-text);
+  border: 0; padding: var(--space-sm) var(--space-md); border-radius: var(--radius-sm);
+  cursor: pointer; display: inline-flex; align-items: center; gap: var(--space-xs);
+  transition: background var(--dur-base) var(--ease);
+}
+.prompt-bar .copy-btn.copied { background: var(--color-accent); color: var(--color-text-inverse); }
+.prompt-bar .copy-btn svg { width: 12px; height: 12px; }
+.prompt-body { overflow-x: auto; }
+.prompt-body pre {
+  font-family: var(--font-mono); font-size: var(--text-body-sm); line-height: 1.65;
+  color: var(--field-ink, var(--color-text-inverse));
+  padding: var(--space-base); margin: 0;
+  white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word;
+}
+.prompt-body pre .kw { color: var(--field-particle, var(--color-accent)); font-weight: 500; }
+.prompt-body pre .ph { color: var(--field-particle, var(--color-accent)); font-weight: 700; }
 
-/* ── prompt window, matching Cuts/frames as the sibling page does ─────────── */
-.pw{margin-top:var(--s3)}
-.pw summary{cursor:pointer;list-style:none;display:inline-block;font-family:var(--mono);
-  font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--green-deep);
-  border:1.5px solid var(--green-deep);border-radius:3px;padding:6px 10px}
-.pw summary::-webkit-details-marker{display:none}
-.pw summary::before{content:"+ "}
-.pw[open] summary::before{content:"- "}
-.pw[open] summary{background:var(--green-deep);color:var(--cream)}
-.prompt-wrap{--paper:var(--cream);--font-mono:var(--mono);--font-display:var(--sans);
-  --butter-soft:var(--butter-wash);--sage:var(--green-light);margin-top:var(--s4);
-  border:2px solid var(--ink);border-radius:12px;overflow:hidden;
-  box-shadow:4px 4px 0 var(--ink);background:#1f1d1a}
-.prompt-bar{display:flex;align-items:center;gap:10px;background:var(--ink);color:var(--paper);
-  padding:12px 16px;font-family:var(--font-mono);font-size:12px;letter-spacing:.05em}
-.prompt-bar .dot{flex:none}
-.prompt-bar .dot{width:9px;height:9px;border-radius:50%;background:#c4604f}
-.prompt-bar .dot.y{background:var(--butter)}
-.prompt-bar .dot.g{background:var(--sage)}
-.prompt-bar .label{margin-left:6px;flex:1;min-width:0;overflow:hidden;
-  text-overflow:ellipsis;white-space:nowrap}
-.prompt-bar .copy-btn{flex:none;font-family:var(--font-display);font-weight:700;font-size:11px;
-  letter-spacing:.08em;text-transform:uppercase;background:var(--butter);color:var(--ink);
-  border:none;padding:7px 14px;border-radius:4px;cursor:pointer;
-  display:inline-flex;align-items:center;gap:6px;transition:background 180ms ease}
-.prompt-bar .copy-btn:hover{background:var(--butter-soft)}
-.prompt-bar .copy-btn.copied{background:var(--sage);color:var(--paper)}
-.prompt-bar .copy-btn svg{width:12px;height:12px}
-.prompt-body{background:#1f1d1a;overflow-x:auto}
-.prompt-body pre{font-family:var(--font-mono);font-size:.8rem;line-height:1.65;color:#e8e2d4;
-  padding:18px;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word}
-.prompt-body pre .kw{color:#e8a86a;font-weight:600}
-.prompt-body pre .ph{color:var(--butter);font-weight:700}
+/* ---- tools -------------------------------------------------------------- */
+.tool-list h4 { margin: var(--space-xs) 0 0; font-family: var(--font-body); font-size: var(--text-body); }
+.tool-list [data-slot="summary"] code { font-size: 0.9em; }
 
-/* ── the tools ────────────────────────────────────────────────────────────── */
-.talks{list-style:none;display:grid;gap:var(--s4);max-width:820px;margin:var(--s6) auto 0}
-@media (min-width:720px){.talks{grid-template-columns:1fr 1fr}}
-.talks li > div,.talks a{display:block;text-decoration:none;padding:var(--s5);
-  background:var(--green-deep);border:1px solid var(--edge-dark);border-radius:var(--radius);
-  transition:background .2s ease,border-color .2s ease;height:100%}
-.talks a:hover{background:#16382583;border-color:var(--butter)}
-.talk-h{display:flex;align-items:center;justify-content:space-between;gap:var(--s3)}
-.talk-t{display:block;font-family:var(--display);font-size:var(--t-lg);color:var(--on-dark);
-  line-height:1.2;text-transform:none}
-.talk-s{font-family:var(--mono);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;
-  padding:4px 8px;border-radius:3px;border:1px solid currentColor;white-space:nowrap;
-  color:var(--green-light)}
-.talk-m{display:block;font-family:var(--mono);font-size:var(--t-micro);color:var(--on-dark-soft);
-  margin-top:var(--s3);line-height:1.75}
-.talk-m b{color:var(--butter);font-weight:500}
+/* ---- closing line ------------------------------------------------------- */
+.turn { text-align: center; }
+.turn-a { font-family: var(--font-display); font-size: var(--text-heading-md); color: var(--color-accent-text, var(--color-accent-deep)); margin: 0; }
+.turn-b {
+  font-family: var(--font-hand); font-size: var(--text-heading-lg); color: var(--color-text);
+  margin: var(--space-md) auto 0; max-width: 26ch; line-height: 1.25;
+}
 
-/* ── the turn ─────────────────────────────────────────────────────────────── */
-.turn{text-align:center;padding-block:var(--s8)}
-.turn-a{font-family:var(--display);font-size:clamp(1.5rem,1.1rem + 1.8vw,2.1rem);color:var(--green)}
-.turn-b{font-family:var(--script);font-size:clamp(1.7rem,1.2rem + 2.1vw,2.5rem);color:var(--ink);
-  margin-top:var(--s3);max-width:26ch;margin-inline:auto;line-height:1.25}
-
-/* ── footer ───────────────────────────────────────────────────────────────── */
-.foot{background:var(--green-deep);color:var(--on-dark);padding-block:var(--s8)}
-.foot h2{margin-bottom:var(--s2)}
-.foot .lede{color:var(--on-dark-soft)}
-.chan{display:flex;flex-wrap:wrap;gap:var(--s3);list-style:none;margin-top:var(--s6)}
-.chan a{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;
-  border:1px solid var(--edge-dark);color:var(--on-dark);
-  transition:background .2s ease,color .2s ease}
-.chan a:hover{background:var(--butter);color:var(--green-deep);border-color:var(--butter)}
-.chan svg{width:19px;height:19px}
-.fine{font-family:var(--mono);font-size:var(--t-micro);color:var(--on-dark-soft);margin-top:var(--s7);
-  letter-spacing:.04em}
-.fine a{color:var(--butter);text-decoration:none}
-.fine a:hover{text-decoration:underline}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important; animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important; scroll-behavior: auto !important;
+  }
+}
 </style>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
 
-<header class="topbar">
-  <div class="topbar-in">
-    <a class="brand" href="https://houstonbloom.github.io/houstonbloom/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
+<div class="tpl tpl--website">
+
+  <header class="nav-bar site-header" data-component="nav-bar"><div class="inner">
+    <a class="brand" href="https://houstonbloom.github.io/houstonbloom/" aria-label="Houston Bloom">
+      <span class="brand-logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
         <circle cx="12" cy="12" r="2.6"/>
         <path d="M12 9.4C12 6 10.3 4 12 2c1.7 2 0 4 0 7.4z"/><path d="M14.6 12c3.4 0 5.4-1.7 7.4 0-2 1.7-4 0-7.4 0z"/>
         <path d="M12 14.6c0 3.4 1.7 5.4 0 7.4-1.7-2 0-4 0-7.4z"/><path d="M9.4 12c-3.4 0-5.4 1.7-7.4 0 2-1.7 4 0 7.4 0z"/>
-      </svg> Houston Bloom</a>
-    <nav aria-label="Pages"><ul class="navlinks">
-      <li><a href="#s-convention">The convention</a></li>
-      <li><a href="#s-steps">Start</a></li>
-      <li><a href="#s-tools">Tools</a></li>
-      <li><a href="#s-viewer">Viewer</a></li>
-      <li><a href="https://github.com/HoustonBloom/PinboardMCP" target="_blank" rel="noopener">GitHub</a></li>
-    </ul></nav>
-  </div>
-</header>
+      </svg></span> Houston Bloom
+    </a>
+    <nav aria-label="Main">
+      <a href="#convention">Convention</a>
+      <a href="#start">Start</a>
+      <a href="#tools">Tools</a>
+      <a href="#viewer">Viewer</a>
+      <a href="https://github.com/HoustonBloom/PinboardMCP" target="_blank" rel="noopener">GitHub</a>
+    </nav>
+    <div class="header-actions"></div>
+  </div></header>
 
-<main id="main">
+  <main id="main">
 
-<section class="panel hero" id="s-hero">
-  <div class="shell">
-    <p class="script">a shared library, with nobody holding the keys</p>
-    <h1><span>Tag a link <code>bloom</code>.</span> <span>The network finds it.</span></h1>
-    <p class="lede measure">An MCP server that connects Claude to your Pinboard. Save a bookmark, add one word, and it joins a knowledge layer that no one owns and anyone can join.</p>
-    <hr class="hero-rule">
-    <p class="btn-row">
-      <a class="btn" href="#s-steps">Start here</a>
-      <a class="btn btn-ghost" href="#s-tools">The tools</a>
-    </p>
-  </div>
-</section>
+    <section class="hero" id="top"><div class="container">
+      <p class="script">a shared library, with nobody holding the keys</p>
+      <h1><span>Tag a link <code>bloom</code>.</span> <span>The network finds it.</span></h1>
+      <p class="hero-line">An MCP server that connects Claude to your Pinboard. Save a bookmark, add one word, and it joins a knowledge layer <em>no one owns</em>.</p>
+      <a class="cta" href="#start">Start here <span aria-hidden="true">&#8595;</span></a>
+    </div></section>
 
-<section class="panel panel-tint" id="s-convention">
-  <div class="shell">
-    <span class="eyebrow">The convention</span>
-    <h2>Two words, and no central authority.</h2>
-    <p class="lede measure"><code>bloom</code> is a signal tag. It means: <em>I want this surfaced to other people.</em> Pair it with a place so the people nearby can find it.</p>
+    <section class="section" id="convention"><div class="container">
+      <p class="section-eyebrow">The convention</p>
+      <h2 class="section-title">Two words, and no central authority.</h2>
+      <p class="section-lede"><code>bloom</code> is a signal tag. It means: <em>I want this surfaced to other people.</em> Pair it with a place so the people nearby can find it.</p>
 
-    <div class="tags">
-      <span class="tag">bloom</span>
-      <span class="tag loc">houston</span>
-      <span class="tag loc">austin</span>
-      <span class="tag loc">detroit</span>
-      <span class="tag loc">global</span>
-    </div>
+      <ul class="tags">
+        <li>bloom</li>
+        <li class="loc">houston</li>
+        <li class="loc">austin</li>
+        <li class="loc">detroit</li>
+        <li class="loc">global</li>
+      </ul>
 
-    <figure class="flow">
-      <p class="sr-only">Three people each save a bookmark to their own separate Pinboard
-        account and tag it bloom plus a place. The shared collective is simply everything
-        carrying that tag; this MCP server reads it back so Claude can answer questions
-        about it. Nothing sits in the middle.</p>
+      <figure class="flow">
+        <p class="sr-only">Three people each save a bookmark to their own separate Pinboard
+          account and tag it bloom plus a place. The shared collective is simply everything
+          carrying that tag; this MCP server reads it back so Claude can answer questions
+          about it. Nothing sits in the middle.</p>
 
-      <div class="flow-row">
-        <div class="fcol">
-          <div class="fbox">
-            <p class="fb-k">Your Pinboard</p>
-            <p class="fb-s">your account, your bookmarks</p>
-          </div>
-          <span class="fdown" aria-hidden="true"></span>
-          <p class="ftag">bloom + houston</p>
-        </div>
-        <div class="fcol">
-          <div class="fbox">
-            <p class="fb-k">Your friend&rsquo;s</p>
-            <p class="fb-s">a different account entirely</p>
-          </div>
-          <span class="fdown" aria-hidden="true"></span>
-          <p class="ftag">bloom + austin</p>
-        </div>
-        <div class="fcol">
-          <div class="fbox">
-            <p class="fb-k">A stranger&rsquo;s</p>
-            <p class="fb-s">nobody had to sign up</p>
-          </div>
-          <span class="fdown" aria-hidden="true"></span>
-          <p class="ftag">bloom + global</p>
-        </div>
-      </div>
-
-      <div class="fmerge" aria-hidden="true"><i class="fm-a"></i><i class="fm-b"></i><i class="fm-c"></i></div>
-      <span class="fdown" aria-hidden="true"></span>
-
-      <div class="fbox fwide">
-        <p class="fb-k">The collective</p>
-        <p class="fb-s">everything tagged bloom, anywhere, by anyone</p>
-      </div>
-
-      <p class="fstep"><span class="fdown" aria-hidden="true"></span><span class="fstep-l">this MCP server</span></p>
-
-      <div class="fbox fwide fdeep">
-        <p class="fb-k">Claude, asked a question</p>
-        <p class="fb-s">who knows about mutual aid? what is new this week?</p>
-      </div>
-
-      <figcaption>No server in the middle. Just a word people agreed to use.</figcaption>
-    </figure>
-  </div>
-</section>
-
-<section class="panel" id="s-steps">
-  <div class="shell">
-    <span class="eyebrow">Start here</span>
-    <h2>Getting started</h2>
-    <p class="lede measure">You need a computer, Claude Desktop (not the web version), Python 3.10 or later, and a Pinboard account. About ten minutes.</p>
-
-    <div class="hz">
-      <article class="hz-card hz-1">
-        <p class="hz-k">Step 1</p>
-        <p class="hz-t">Get your Pinboard token</p>
-        <p class="hz-d">Log in, open <a href="https://pinboard.in/settings/password" target="_blank" rel="noopener">pinboard.in/settings/password</a>, and copy the API token. It looks like <code>yourname:ABC123DEF456</code>. Keep it somewhere you can paste from, and nowhere public — it is a password.</p>
-      </article>
-
-      <article class="hz-card hz-2">
-        <p class="hz-k">Step 2</p>
-        <p class="hz-t">Download the server, install what it needs</p>
-        <p class="hz-d">Get the folder from <a href="https://github.com/HoustonBloom/PinboardMCP" target="_blank" rel="noopener">GitHub</a> and put it wherever you keep projects — or paste this prompt to an AI on your computer and let it do the fetching.</p>
-        <details class="pw"><summary>Show the prompt that fetches it</summary>
-          <div class="prompt-wrap">
-            <div class="prompt-bar">
-              <span class="dot"></span><span class="dot y"></span><span class="dot g"></span>
-              <span class="label">prompt-to-get-the-server.txt</span>
-              <button class="copy-btn" type="button" data-copy-target="p-get" aria-label="Copy prompt to clipboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span>Copy</span></button>
+        <div class="flow-row">
+          <div class="fcol">
+            <div class="fbox">
+              <p class="fb-k">Your Pinboard</p>
+              <p class="fb-s">your account, your bookmarks</p>
             </div>
-            <div class="prompt-body"><pre id="p-get">Get me the Bloom Pinboard MCP server.
+            <span class="fdown" aria-hidden="true"></span>
+            <p class="ftag">bloom + houston</p>
+          </div>
+          <div class="fcol">
+            <div class="fbox">
+              <p class="fb-k">Your friend&rsquo;s</p>
+              <p class="fb-s">a different account entirely</p>
+            </div>
+            <span class="fdown" aria-hidden="true"></span>
+            <p class="ftag">bloom + austin</p>
+          </div>
+          <div class="fcol">
+            <div class="fbox">
+              <p class="fb-k">A stranger&rsquo;s</p>
+              <p class="fb-s">nobody had to sign up</p>
+            </div>
+            <span class="fdown" aria-hidden="true"></span>
+            <p class="ftag">bloom + global</p>
+          </div>
+        </div>
+
+        <div class="fmerge" aria-hidden="true"><i class="fm-a"></i><i class="fm-b"></i><i class="fm-c"></i></div>
+        <span class="fdown" aria-hidden="true"></span>
+
+        <div class="fbox fwide">
+          <p class="fb-k">The collective</p>
+          <p class="fb-s">everything tagged bloom, anywhere, by anyone</p>
+        </div>
+
+        <p class="fstep"><span class="fdown" aria-hidden="true"></span><span class="fstep-l">this MCP server</span></p>
+
+        <div class="fbox fwide fdeep">
+          <p class="fb-k">Claude, asked a question</p>
+          <p class="fb-s">who knows about mutual aid? what is new this week?</p>
+        </div>
+
+        <figcaption>No server in the middle. Just a word people agreed to use.</figcaption>
+      </figure>
+    </div></section>
+
+    <section class="section" id="start"><div class="container">
+      <p class="section-eyebrow">Start here</p>
+      <h2 class="section-title">Getting started</h2>
+      <p class="section-lede">You need a computer, Claude Desktop (not the web version), Python 3.10 or later, and a Pinboard account. About ten minutes.</p>
+
+      <ol class="steps">
+        <li>
+          <p class="st-k">Step 1</p>
+          <p class="st-t">Get your Pinboard token</p>
+          <p class="st-d">Log in, open <a href="https://pinboard.in/settings/password" target="_blank" rel="noopener">pinboard.in/settings/password</a>, and copy the API token. It looks like <code>yourname:ABC123DEF456</code>. Keep it somewhere you can paste from, and nowhere public &mdash; it is a password.</p>
+        </li>
+        <li>
+          <p class="st-k">Step 2</p>
+          <p class="st-t">Download the server, install what it needs</p>
+          <p class="st-d">Get the folder from <a href="https://github.com/HoustonBloom/PinboardMCP" target="_blank" rel="noopener">GitHub</a> and put it wherever you keep projects &mdash; or paste this prompt to an AI on your computer and let it do the fetching.</p>
+          <details class="pw"><summary>Show the prompt that fetches it</summary>
+            <div class="prompt-wrap">
+              <div class="prompt-bar">
+                <span class="dot"></span><span class="dot y"></span><span class="dot g"></span>
+                <span class="label">prompt-to-get-the-server.txt</span>
+                <button class="copy-btn" type="button" data-copy-target="p-get" aria-label="Copy prompt to clipboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span>Copy</span></button>
+              </div>
+              <div class="prompt-body"><pre id="p-get">Get me the Bloom Pinboard MCP server.
 <span class="kw">1. Ask me where I keep projects</span> before you put anything anywhere. If I have no answer, suggest a place on this computer and wait for a yes.
 <span class="kw">2. Get</span> https://github.com/HoustonBloom/PinboardMCP into a folder called PinboardMCP in that place: clone it if git is on this computer, otherwise download https://github.com/HoustonBloom/PinboardMCP/archive/refs/heads/main.zip and unzip it there.
 <span class="kw">3. Check Python 3.10 or later.</span> Try <span class="kw">python --version</span>, then <span class="kw">python3 --version</span>. If neither answers, send me to https://www.python.org/downloads/ and stop.
 <span class="kw">4. Install the two dependencies:</span> <span class="kw">pip install httpx mcp</span>.
 <span class="kw">5. Give me two full paths:</span> the Python you just checked, and bloom-houston-mcp/server.py inside that folder. I need both for the next step.
 If something fails, tell me which step and the exact error.</pre></div>
-          </div>
-        </details>
-      </article>
-
-      <article class="hz-card hz-3">
-        <p class="hz-k">Step 3</p>
-        <p class="hz-t">Point Claude Desktop at it</p>
-        <p class="hz-d">Claude Desktop reads one config file. On Mac it is <code>~/Library/Application Support/Claude/claude_desktop_config.json</code>; on Windows, <code>%APPDATA%\Claude\claude_desktop_config.json</code>. Create it if it is not there. Paths must be absolute, and on Windows the backslashes are doubled.</p>
-        <details class="pw"><summary>Show the config to paste</summary>
-          <div class="prompt-wrap">
-            <div class="prompt-bar">
-              <span class="dot"></span><span class="dot y"></span><span class="dot g"></span>
-              <span class="label">claude_desktop_config.json</span>
-              <button class="copy-btn" type="button" data-copy-target="p-config" aria-label="Copy config to clipboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span>Copy</span></button>
             </div>
-            <div class="prompt-body"><pre id="p-config">{
+          </details>
+        </li>
+        <li>
+          <p class="st-k">Step 3</p>
+          <p class="st-t">Point Claude Desktop at it</p>
+          <p class="st-d">Claude Desktop reads one config file. On Mac it is <code>~/Library/Application Support/Claude/claude_desktop_config.json</code>; on Windows, <code>%APPDATA%\Claude\claude_desktop_config.json</code>. Create it if it is not there. Paths must be absolute, and on Windows the backslashes are doubled.</p>
+          <details class="pw"><summary>Show the config to paste</summary>
+            <div class="prompt-wrap">
+              <div class="prompt-bar">
+                <span class="dot"></span><span class="dot y"></span><span class="dot g"></span>
+                <span class="label">claude_desktop_config.json</span>
+                <button class="copy-btn" type="button" data-copy-target="p-config" aria-label="Copy config to clipboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span>Copy</span></button>
+              </div>
+              <div class="prompt-body"><pre id="p-config">{
   "mcpServers": {
     "pinboard": {
       "command": "<span class="ph">C:\\Path\\To\\Your\\python.exe</span>",
@@ -475,113 +453,132 @@ If something fails, tell me which step and the exact error.</pre></div>
     }
   }
 }</pre></div>
+            </div>
+          </details>
+        </li>
+        <li>
+          <p class="st-k">Step 4</p>
+          <p class="st-t">Restart, then ask it something</p>
+          <p class="st-d">Quit Claude Desktop properly &mdash; Cmd+Q on Mac, or right-click the tray icon on Windows. Closing the window is not enough. Reopen it and try <em>&ldquo;show me my Pinboard tags&rdquo;</em> or <em>&ldquo;find bloom-tagged resources about mutual aid&rdquo;</em>. If Claude answers from your bookmarks, you are set.</p>
+        </li>
+        <li>
+          <p class="st-k">Step 5</p>
+          <p class="st-t">Tag one thing <code>bloom</code></p>
+          <p class="st-d">That is the whole contribution. Save a link, tag it <code>bloom</code> and your city, and it is discoverable by everyone else running this. No account with us, no permission, no platform.</p>
+        </li>
+      </ol>
+    </div></section>
+
+    <section class="section section--band" id="tools"><div class="container">
+      <p class="section-eyebrow">The parts</p>
+      <h2 class="section-title">Twenty-one tools, five jobs.</h2>
+      <p class="section-lede">Claude picks the right one from what you ask. You never call these by name.</p>
+
+      <ul class="tool-list" data-component="tool-list">
+        <li data-slot="row">
+          <div data-slot="name">
+            <span class="kind-label" data-component="kind-label" data-kind="project">Yours</span>
+            <h4>Your bookmarks</h4>
           </div>
-        </details>
-      </article>
+          <p data-slot="summary">Search your own collection, list every tag you use with counts, save a new bookmark, and get tag suggestions for a URL.</p>
+          <div data-slot="action"><a class="action-link" data-component="action-link" href="https://github.com/HoustonBloom/PinboardMCP/blob/main/bloom-houston-mcp/server.py" target="_blank" rel="noopener"><span data-slot="label">4 tools</span><span data-slot="glyph" aria-hidden="true">&#8594;</span></a></div>
+        </li>
+        <li data-slot="row">
+          <div data-slot="name">
+            <span class="kind-label" data-component="kind-label" data-kind="program">Shared</span>
+            <h4>The collective</h4>
+          </div>
+          <p data-slot="summary">Search <code>bloom</code> across the network, see what was saved lately, take the whole snapshot in one call, find contributors by topic, find where interests overlap, and build the relationship graph.</p>
+          <div data-slot="action"><a class="action-link" data-component="action-link" href="https://github.com/HoustonBloom/PinboardMCP/blob/main/bloom-houston-mcp/server.py" target="_blank" rel="noopener"><span data-slot="label">6 tools</span><span data-slot="glyph" aria-hidden="true">&#8594;</span></a></div>
+        </li>
+        <li data-slot="row">
+          <div data-slot="name">
+            <span class="kind-label" data-component="kind-label" data-kind="talk">People</span>
+            <h4>Anyone public</h4>
+          </div>
+          <p data-slot="summary">A profile of any Pinboard user, search inside one person&rsquo;s links, compare what two people share, and check who else saved a URL.</p>
+          <div data-slot="action"><a class="action-link" data-component="action-link" href="https://github.com/HoustonBloom/PinboardMCP/blob/main/bloom-houston-mcp/server.py" target="_blank" rel="noopener"><span data-slot="label">4 tools</span><span data-slot="glyph" aria-hidden="true">&#8594;</span></a></div>
+        </li>
+        <li data-slot="row">
+          <div data-slot="name">
+            <span class="kind-label" data-component="kind-label" data-kind="show">New</span>
+            <h4>Members</h4>
+          </div>
+          <p data-slot="summary">Discover who has started using the <code>bloom</code> tag, list everyone tracked so far, and start that list over.</p>
+          <div data-slot="action"><a class="action-link" data-component="action-link" href="https://github.com/HoustonBloom/PinboardMCP/blob/main/bloom-houston-mcp/server.py" target="_blank" rel="noopener"><span data-slot="label">3 tools</span><span data-slot="glyph" aria-hidden="true">&#8594;</span></a></div>
+        </li>
+        <li data-slot="row">
+          <div data-slot="name">
+            <span class="kind-label" data-component="kind-label" data-kind="template">Utility</span>
+            <h4>Plumbing</h4>
+          </div>
+          <p data-slot="summary">RSS or JSON feed URLs for any user or tag, a search across all of public Pinboard, and a cache you can clear to force fresh calls.</p>
+          <div data-slot="action"><a class="action-link" data-component="action-link" href="https://github.com/HoustonBloom/PinboardMCP/blob/main/bloom-houston-mcp/server.py" target="_blank" rel="noopener"><span data-slot="label">3 tools</span><span data-slot="glyph" aria-hidden="true">&#8594;</span></a></div>
+        </li>
+      </ul>
+    </div></section>
 
-      <article class="hz-card hz-4">
-        <p class="hz-k">Step 4</p>
-        <p class="hz-t">Restart, then ask it something</p>
-        <p class="hz-d">Quit Claude Desktop properly — Cmd+Q on Mac, or right-click the tray icon on Windows. Closing the window is not enough. Reopen it and try <em>&ldquo;show me my Pinboard tags&rdquo;</em> or <em>&ldquo;find bloom-tagged resources about mutual aid&rdquo;</em>. If Claude answers from your bookmarks, you are set.</p>
-      </article>
+    <section class="section" id="viewer"><div class="container">
+      <p class="section-eyebrow">Make your own</p>
+      <h2 class="section-title">Your city, your directory.</h2>
+      <p class="section-lede">Once the server is connected, Claude can read the real bookmarks and build a searchable directory for wherever you are. Here is <a href="https://claude.ai/public/artifacts/c5a8be0f-f34d-4749-809f-432fe4995613" target="_blank" rel="noopener">one we made</a>. Paste this and swap in your city.</p>
 
-      <article class="hz-card hz-2">
-        <p class="hz-k">Step 5</p>
-        <p class="hz-t">Tag one thing <code>bloom</code></p>
-        <p class="hz-d">That is the whole contribution. Save a link, tag it <code>bloom</code> and your city, and it is discoverable by everyone else running this. No account with us, no permission, no platform.</p>
-      </article>
-    </div>
-  </div>
-</section>
-
-<section class="panel panel-dark" id="s-tools">
-  <div class="shell">
-    <span class="eyebrow">The parts</span>
-    <h2>Twenty-one tools, five jobs.</h2>
-    <p class="lede">Claude picks the right one from what you ask. You never call these by name.</p>
-    <ul class="talks">
-      <li><div>
-        <span class="talk-h"><span class="talk-t">Your bookmarks</span><span class="talk-s">Ready</span></span>
-        <span class="talk-m"><b>search_my_bookmarks</b> · search your own collection<br><b>get_my_tags</b> · every tag you use, with counts<br><b>save_bookmark</b> · save a new one, tagged<br><b>suggest_tags</b> · what to tag a URL</span>
-      </div></li>
-      <li><div>
-        <span class="talk-h"><span class="talk-t">The collective</span><span class="talk-s">Ready</span></span>
-        <span class="talk-m"><b>search_collective</b> · search bloom across the network<br><b>get_recent</b> · what was saved lately<br><b>get_collective_overview</b> · the whole snapshot, one call<br><b>who_knows_about</b> · contributors by topic<br><b>find_connections</b> · where interests overlap<br><b>get_network_map</b> · the relationship graph</span>
-      </div></li>
-      <li><div>
-        <span class="talk-h"><span class="talk-t">People</span><span class="talk-s">Ready</span></span>
-        <span class="talk-m"><b>get_user_profile</b> · anyone's public picture<br><b>search_user_bookmarks</b> · inside one person's links<br><b>find_common_ground</b> · what two people share<br><b>who_else_saved</b> · who else kept this URL</span>
-      </div></li>
-      <li><div>
-        <span class="talk-h"><span class="talk-t">New members</span><span class="talk-s">Ready</span></span>
-        <span class="talk-m"><b>discover_new_members</b> · who started using bloom<br><b>list_known_members</b> · everyone tracked so far<br><b>reset_known_members</b> · start that list over</span>
-      </div></li>
-      <li><div>
-        <span class="talk-h"><span class="talk-t">Plumbing</span><span class="talk-s">Ready</span></span>
-        <span class="talk-m"><b>get_feed_url</b> · RSS or JSON for any user or tag<br><b>search_public_pinboard</b> · all of public Pinboard<br><b>clear_cache</b> · force fresh calls</span>
-      </div></li>
-    </ul>
-    <p class="btn-row">
-      <a class="btn" href="#s-steps">Set it up</a>
-      <a class="btn btn-ghost" href="https://github.com/HoustonBloom/PinboardMCP" target="_blank" rel="noopener">Read the source</a>
-    </p>
-  </div>
-</section>
-
-<section class="panel panel-tint" id="s-viewer">
-  <div class="shell">
-    <span class="eyebrow">Make your own</span>
-    <h2>Your city, your directory.</h2>
-    <p class="lede measure">Once the server is connected, Claude can read the real bookmarks and build a searchable directory for wherever you are. Here is <a href="https://claude.ai/public/artifacts/c5a8be0f-f34d-4749-809f-432fe4995613" target="_blank" rel="noopener"><strong>one we made</strong></a>. Paste this and swap in your city.</p>
-    <details class="pw" open><summary>Show the viewer prompt</summary>
-      <div class="prompt-wrap" style="max-width:720px">
-        <div class="prompt-bar">
-          <span class="dot"></span><span class="dot y"></span><span class="dot g"></span>
-          <span class="label">prompt-for-a-directory.txt</span>
-          <button class="copy-btn" type="button" data-copy-target="p-viewer" aria-label="Copy prompt to clipboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span>Copy</span></button>
-        </div>
-        <div class="prompt-body"><pre id="p-viewer">Connect to the Pinboard MCP and make me a Bloom Network directory artifact.
+      <details class="pw" open><summary>Show the viewer prompt</summary>
+        <div class="prompt-wrap">
+          <div class="prompt-bar">
+            <span class="dot"></span><span class="dot y"></span><span class="dot g"></span>
+            <span class="label">prompt-for-a-directory.txt</span>
+            <button class="copy-btn" type="button" data-copy-target="p-viewer" aria-label="Copy prompt to clipboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span>Copy</span></button>
+          </div>
+          <div class="prompt-body"><pre id="p-viewer">Connect to the Pinboard MCP and make me a Bloom Network directory artifact.
 <span class="kw">1. Fetch every bookmark tagged</span> bloom <span class="kw">and</span> <span class="ph">[your-city]</span>. Pull the real data from my Pinboard account and embed it in the artifact — do not invent entries.
 <span class="kw">2. Include a search</span> that matches what someone means, not just the words they typed.
 <span class="kw">3. Include tag filtering</span> by topic.
 <span class="kw">4. Include a short section</span> showing how someone adds their own resource: tag it bloom plus the city.
 <span class="kw">5. Keep the design clean and accessible:</span> real contrast, keyboard reachable, readable on a phone.
 <span class="kw">6. Tell me how many bookmarks you found</span> and how many contributors they came from.</pre></div>
-      </div>
-    </details>
-  </div>
-</section>
+        </div>
+      </details>
+    </div></section>
 
-<section class="panel turn">
-  <div class="shell">
-    <p class="turn-a">Infrastructure for collective intelligence:<br>simple, decentralized, owned by no one.</p>
-    <p class="turn-b">Start a bloom in your city. Nobody has to say yes.</p>
-  </div>
-</section>
+    <section class="section turn"><div class="container narrow">
+      <p class="turn-a">Infrastructure for collective intelligence: simple, decentralized, owned by no one.</p>
+      <p class="turn-b">Start a bloom in your city. Nobody has to say yes.</p>
+    </div></section>
 
-</main>
+  </main>
 
-<footer class="foot" id="s-foot">
-  <div class="shell">
+  <footer class="site-footer"><div class="container">
     <h2>Get involved.</h2>
-    <p class="lede">Come to a training, or join the Discord.</p>
-    <ul class="chan">
-      <li><a href="https://substack.com/@houstonbloom" target="_blank" rel="noopener" title="Substack"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16"/><path d="M4 9h16"/><path d="M4 14h16v6l-8-4-8 4z"/></svg><span class="sr-only">Substack</span></a></li>
-      <li><a href="https://www.youtube.com/@gardens_not_platforms" target="_blank" rel="noopener" title="YouTube"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="4"/><path d="M10 9.2l5 2.8-5 2.8z"/></svg><span class="sr-only">YouTube</span></a></li>
-      <li><a href="https://www.instagram.com/gardens_not_platforms" target="_blank" rel="noopener" title="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="3.6"/><circle cx="17.3" cy="6.7" r=".8" fill="currentColor"/></svg><span class="sr-only">Instagram</span></a></li>
-      <li><a href="https://www.linkedin.com/in/megan-ducote-b73458113/" target="_blank" rel="noopener" title="LinkedIn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="9" width="4" height="12"/><circle cx="5" cy="5" r="2"/><path d="M11 21v-7a3 3 0 0 1 6 0v7"/><path d="M11 9v12"/></svg><span class="sr-only">LinkedIn</span></a></li>
-      <li><a href="https://discord.gg/FZtNmKRyq" target="_blank" rel="noopener" title="Discord"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 15c1.5 1 2.5 1 4 1s2.5 0 4-1"/><path d="M6 6.5A14 14 0 0 1 12 5a14 14 0 0 1 6 1.5l2 9.5-3 2-1.5-2.5c-2.5 1-4.5 1-7 0L7 18l-3-2z"/><circle cx="9.5" cy="12" r="1" fill="currentColor"/><circle cx="14.5" cy="12" r="1" fill="currentColor"/></svg><span class="sr-only">Discord</span></a></li>
-      <li><a href="https://github.com/HoustonBloom" target="_blank" rel="noopener" title="GitHub"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 19c-4 1.5-4-2-6-2m12 4v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1-.3-3.4 1.3a11.7 11.7 0 0 0-6 0C6.8 2.8 5.8 3.1 5.8 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4.4 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg><span class="sr-only">GitHub</span></a></li>
-      <li><a href="https://luma.com/houstonbloom?k=c" target="_blank" rel="noopener" title="Calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/></svg><span class="sr-only">Calendar</span></a></li>
-    </ul>
-    <p class="fine">MIT licensed. Built on <a href="https://pinboard.in" target="_blank" rel="noopener">Pinboard</a>, in support of <a href="https://bloomnetwork.org/" target="_blank" rel="noopener">Bloom Network</a>. Your API token stays in your own config file and is never committed.</p>
-  </div>
-</footer>
+    <p>Come to a training, or join the Discord.</p>
+    <div class="links">
+      <div class="link-block">
+        <h4>Read and watch</h4>
+        <a href="https://substack.com/@houstonbloom" target="_blank" rel="noopener">Substack</a>
+        <a href="https://www.youtube.com/@gardens_not_platforms" target="_blank" rel="noopener">YouTube</a>
+        <a href="https://www.instagram.com/gardens_not_platforms" target="_blank" rel="noopener">Instagram</a>
+      </div>
+      <div class="link-block">
+        <h4>Join in</h4>
+        <a href="https://discord.gg/FZtNmKRyq" target="_blank" rel="noopener">Discord</a>
+        <a href="https://luma.com/houstonbloom?k=c" target="_blank" rel="noopener">Calendar</a>
+        <a href="https://github.com/HoustonBloom" target="_blank" rel="noopener">GitHub</a>
+      </div>
+      <div class="link-block">
+        <h4>Built on</h4>
+        <a href="https://pinboard.in" target="_blank" rel="noopener">Pinboard</a>
+        <a href="https://bloomnetwork.org/" target="_blank" rel="noopener">Bloom Network</a>
+      </div>
+    </div>
+    <p class="coda">MIT licensed. Your API token stays in your own config file and is never committed. Style <code>bloom</code>, template <code>website</code>, from the Houston Bloom design system.</p>
+  </div></footer>
+
+</div>
 
 <script>
 (() => {
   document.querySelectorAll('[data-copy-target]').forEach((copyBtn) => {
-    const copyLabel = copyBtn.querySelector('span');
+    const copyLabel = copyBtn.querySelector('span:last-child');
     const promptEl = document.getElementById(copyBtn.getAttribute('data-copy-target'));
     if (!promptEl) return;
     copyBtn.addEventListener('click', async () => {
@@ -600,10 +597,7 @@ If something fails, tell me which step and the exact error.</pre></div>
         }
         copyBtn.classList.add('copied');
         copyLabel.textContent = 'Copied';
-        setTimeout(() => {
-          copyBtn.classList.remove('copied');
-          copyLabel.textContent = 'Copy';
-        }, 2000);
+        setTimeout(() => { copyBtn.classList.remove('copied'); copyLabel.textContent = 'Copy'; }, 2000);
       } catch (err) {
         copyLabel.textContent = 'Copy failed';
         setTimeout(() => { copyLabel.textContent = 'Copy'; }, 2000);

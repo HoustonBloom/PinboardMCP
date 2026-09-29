@@ -1,0 +1,248 @@
+/* --------------------------------------------------------------------------
+   VENDORED COPY. Do not edit here.
+   source   /home/user/design-system/components/tool-list/component.css
+   version  1.2.0
+   refresh  node sync.mjs tool-list "/home/user/PinboardMCP/docs"
+   warning  An edit made in this copy is lost on the next sync.
+   -------------------------------------------------------------------------- */
+
+/* ============================================================================
+   tool-list · v1.2.0 · component
+
+   A set of tools, templates or repos, as rows on one surface. A set of items
+   wants a dense list, not a grid of cards: the reader is scanning for the one
+   they need, and every row answers the same three questions in the same
+   columns. What is it, what does it do, where do I get it.
+
+   Markup
+     <ul class="tool-list" data-component="tool-list">
+       <li data-slot="row">
+         <div data-slot="name"><span class="kind-label" data-kind="template">Template</span>
+           <h4>Node graph</h4></div>
+         <p data-slot="summary">One sentence.</p>
+         <div data-slot="action"> one or two action-link atoms </div>
+       </li>
+     </ul>
+
+   Token surface, falling back to layer 2:
+     --tools-bg       the panel                  --color-surface
+     --tools-rule     row dividers and edge      --color-border
+     --tools-hover    row fill on hover          --color-accent-soft
+     --tools-radius                              --radius-md
+     --tools-pad                                 --space-lg
+
+   Variant shelf (v1.1.0, 2026-09-26, from a review's pick of the proposal
+   frame): an app shelf. Each row is one link with an icon tile, the name and
+   a dot kind, the summary, and a pill verb. Two columns on a tinted panel
+   above 720px, one below. The icon carries identity, so there is no host line.
+     <ul class="tool-list" data-component="tool-list" data-variant="shelf">
+       <li data-slot="row">
+         <span data-slot="icon"><svg aria-hidden="true">...</svg></span>
+         <span data-slot="text">
+           <a data-slot="name" href="...">Node graph <span data-slot="kind">Template</span></a>
+           <span data-slot="summary">One sentence.</span>
+         </span>
+         <span data-slot="actions"><span data-slot="go">View on GitHub</span> [<button data-slot="go">...</button>]</span>
+       </li>
+     </ul>
+   The name link is stretched over the whole row, so the row clicks through
+   to it. A second action (a <button> or <a> marked data-slot="go") sits above
+   the stretch and keeps its own click. A pill that is only a label for the
+   stretched link is a <span>.
+
+   At 375px: each row stacks name, summary, action. Above 720px the row is a
+   three-column grid with the summary in the middle.
+   ============================================================================ */
+
+.tool-list {
+  --tools-bg: var(--color-surface);
+  --tools-rule: var(--color-border);
+  --tools-hover: var(--color-accent-soft);
+  --tools-radius: var(--radius-md);
+  --tools-pad: var(--space-lg);
+
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: var(--tools-bg);
+  border: var(--border-width) var(--border-style) var(--tools-rule);
+  border-radius: var(--tools-radius);
+  overflow: hidden;
+  color: var(--color-text);
+}
+
+.tool-list > [data-slot="row"] {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-xs) var(--space-lg);
+  padding: var(--space-base) var(--tools-pad);
+  border-top: var(--border-width) var(--border-style) var(--tools-rule);
+  transition: background-color var(--dur-fast) var(--ease);
+}
+.tool-list > [data-slot="row"]:first-child { border-top: 0; }
+.tool-list > [data-slot="row"]:hover { background: var(--tools-hover); }
+
+.tool-list [data-slot="name"] {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-xs);
+  min-width: 0;
+}
+.tool-list [data-slot="name"] > :is(h3, h4, p:not(.kind-label)) {
+  margin: 0;
+  font-family: var(--font-display);
+  font-variation-settings: var(--display-axes);
+  font-size: var(--text-body-lg);
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: var(--tracking-display);
+  color: var(--color-text);
+}
+
+.tool-list [data-slot="summary"] {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-body-sm);
+  line-height: 1.55;
+  color: var(--color-text-muted);
+  align-self: center;
+}
+
+.tool-list [data-slot="action"] {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--space-lg);
+  align-self: center;
+}
+
+@media (min-width: 720px) {
+  .tool-list > [data-slot="row"] {
+    grid-template-columns: minmax(180px, 1fr) minmax(0, 2fr) minmax(170px, auto);
+    align-items: center;
+  }
+  .tool-list [data-slot="action"] { justify-content: flex-end; }
+}
+
+
+/* ---- shelf ------------------------------------------------------------- */
+.tool-list[data-variant="shelf"] {
+  --tools-bg: var(--color-surface-alt);
+  --tools-tile: var(--color-surface);
+  --tools-icon: var(--color-accent-text, var(--color-accent-deep));
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-sm) var(--space-lg);
+  padding: var(--space-lg);
+  border: 0;
+  border-radius: var(--radius-lg);
+}
+@media (min-width: 720px) {
+  .tool-list[data-variant="shelf"] { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: var(--space-xl); }
+}
+.tool-list[data-variant="shelf"] > li { min-width: 0; }
+.tool-list[data-variant="shelf"] [data-slot="row"] {
+  position: relative;
+  border-top: 0;
+  display: grid;
+  grid-template-columns: var(--space-3xl) minmax(0, 1fr) auto;
+  gap: var(--space-base);
+  align-items: center;
+  padding: var(--space-base);
+  border-radius: var(--radius-lg);
+  color: var(--color-text);
+  transition: background-color var(--dur-fast) var(--ease);
+}
+.tool-list[data-variant="shelf"] [data-slot="row"]:hover,
+.tool-list[data-variant="shelf"] [data-slot="row"]:focus-within { background: var(--tools-tile); }
+.tool-list[data-variant="shelf"] [data-slot="icon"] {
+  display: grid;
+  place-items: center;
+  width: var(--space-3xl);
+  height: var(--space-3xl);
+  border-radius: var(--radius-lg);
+  border: var(--border-width) var(--border-style) var(--tools-rule);
+  background: var(--tools-tile);
+  color: var(--tools-icon);
+  transition: transform var(--dur-base) var(--ease), background-color var(--dur-base) var(--ease), color var(--dur-base) var(--ease);
+}
+.tool-list[data-variant="shelf"] [data-slot="icon"] svg { width: 55%; height: 55%; }
+.tool-list[data-variant="shelf"] [data-slot="row"]:hover [data-slot="icon"],
+.tool-list[data-variant="shelf"] [data-slot="row"]:focus-within [data-slot="icon"] {
+  transform: rotate(-4deg) scale(1.06);
+  background: var(--tools-icon);
+  color: var(--color-text-inverse);
+}
+.tool-list[data-variant="shelf"] [data-slot="text"] { display: grid; gap: var(--space-xs); min-width: 0; }
+.tool-list[data-variant="shelf"] [data-slot="name"] {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-sm);
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  font-weight: 600;
+  line-height: 1.3;
+  color: inherit;
+  text-decoration: none;
+}
+.tool-list[data-variant="shelf"] a[data-slot="name"]::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+.tool-list[data-variant="shelf"] a[data-slot="name"]:focus-visible { outline: none; }
+.tool-list[data-variant="shelf"] [data-slot="row"]:has(a[data-slot="name"]:focus-visible) { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.tool-list[data-variant="shelf"] [data-slot="actions"] { display: flex; flex-direction: column; align-items: flex-end; gap: var(--space-sm); }
+.tool-list[data-variant="shelf"] [data-slot="kind"] {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  font-weight: 400;
+  color: var(--color-accent-text, var(--color-accent-deep));
+}
+.tool-list[data-variant="shelf"] [data-slot="kind"]::before {
+  content: "";
+  width: var(--space-xs);
+  height: var(--space-xs);
+  border-radius: var(--radius-full);
+  background: currentColor;
+}
+.tool-list[data-variant="shelf"] [data-slot="summary"] {
+  align-self: start;
+  font-size: var(--text-body-sm);
+  color: var(--color-text-muted);
+}
+.tool-list[data-variant="shelf"] [data-slot="go"] {
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-full);
+  border: var(--border-width) var(--border-style) var(--tools-rule);
+  background: var(--tools-tile);
+  font-family: var(--font-body);
+  font-size: var(--text-caption);
+  font-weight: 600;
+  color: var(--color-text);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.tool-list[data-variant="shelf"] :is(a, button)[data-slot="go"] { position: relative; z-index: 1; text-decoration: none; }
+.tool-list[data-variant="shelf"] :is(a, button)[data-slot="go"]:hover { background: var(--color-text); color: var(--color-text-inverse); }
+.tool-list[data-variant="shelf"] [data-slot="row"]:hover span[data-slot="go"] { border-color: var(--color-text); }
+@media (max-width: 719px) {
+  .tool-list[data-variant="shelf"] [data-slot="row"] {
+    grid-template-columns: var(--space-2xl) minmax(0, 1fr);
+    grid-template-areas: "icon text" "icon go";
+    align-items: start;
+    gap: var(--space-sm) var(--space-md);
+    padding: var(--space-md) 0;
+  }
+  .tool-list[data-variant="shelf"] [data-slot="icon"] { grid-area: icon; width: var(--space-2xl); height: var(--space-2xl); border-radius: var(--radius-md); }
+  .tool-list[data-variant="shelf"] [data-slot="text"] { grid-area: text; }
+  .tool-list[data-variant="shelf"] [data-slot="actions"] { grid-area: go; flex-direction: row; flex-wrap: wrap; align-items: center; justify-self: start; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tool-list > [data-slot="row"],
+  .tool-list[data-variant="shelf"] [data-slot="row"],
+  .tool-list[data-variant="shelf"] [data-slot="icon"] { transition: none; }
+  .tool-list[data-variant="shelf"] [data-slot="row"]:hover [data-slot="icon"] { transform: none; }
+}

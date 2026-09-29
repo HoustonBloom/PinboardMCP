@@ -1,0 +1,127 @@
+/* --------------------------------------------------------------------------
+   VENDORED COPY. Do not edit here.
+   source   /home/user/design-system/components/action-link/component.css
+   version  1.1.0
+   refresh  node sync.mjs action-link "/home/user/PinboardMCP/docs"
+   warning  An edit made in this copy is lost on the next sync.
+   -------------------------------------------------------------------------- */
+
+/* ============================================================================
+   action-link · v1.1.0 · atom
+
+   The first member of the atom level. A link that says what happens when you
+   follow it and where it goes, instead of printing the URL as its label.
+
+   It replaces a card link that was an accent underline around
+   a raw URL. A URL is a destination,
+   not an action. The label names the verb ("Watch on Instagram"), and the host
+   rides beside it in mono at caption size, so the reader still sees where they
+   are going without the URL doing the talking.
+
+   Markup
+     <a class="action-link" data-component="action-link" href="..."
+        target="_blank" rel="noopener">
+       <span data-slot="label">Watch on Instagram</span>
+       <span data-slot="host">instagram.com</span>
+       <span data-slot="glyph" aria-hidden="true">&#8599;</span>
+     </a>
+   A <button> takes the same class and slots, for an action that opens in
+   place (a case study in a modal). Internal glyph is &#8594;, external &#8599;.
+
+   Token surface, all falling back to layer 2:
+     --link-ink     label colour               --color-text
+     --link-rule    the underline              --color-accent
+     --link-host    the host caption           --color-text-faint
+     --link-focus   focus ring                 --color-focus
+
+   On a dark ground, set data-tone="inverse" and the three colours move to the
+   inverse set. That is one token swap, not a second component.
+
+   At every width, including 375px: the host sits on its own line under the
+   label. The tap target stays at least 44px tall. Nothing truncates.
+   ============================================================================ */
+
+.action-link {
+  --link-ink: var(--color-text);
+  --link-rule: var(--color-accent);
+  --link-host: var(--color-text-faint);
+  --link-focus: var(--color-focus);
+
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--space-sm);
+  row-gap: 2px;
+  min-height: 44px;
+  padding: var(--space-md) 0;
+  margin: 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+  text-decoration: none;
+  color: var(--link-ink);
+  font: inherit;
+}
+
+.action-link[data-tone="inverse"] {
+  --link-ink: var(--field-ink, var(--color-text-inverse));
+  --link-rule: var(--color-accent-soft);
+  --link-host: color-mix(in oklch, var(--field-ink, var(--color-text-inverse)) 72%, transparent);
+}
+
+.action-link > * { pointer-events: none; }
+
+.action-link > [data-slot="label"] {
+  font-family: var(--font-body);
+  font-size: var(--text-body-sm);
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--link-ink);
+  /* The rule is a background, not text-decoration, so it can thicken on
+     hover without shifting the baseline. */
+  background-image: linear-gradient(var(--link-rule), var(--link-rule));
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 100% 1px;
+  padding-bottom: 3px;
+  transition: background-size var(--dur-fast) var(--ease);
+}
+
+.action-link > [data-slot="host"] {
+  font-family: var(--font-mono, var(--font-body));
+  font-size: var(--text-caption);
+  line-height: 1.3;
+  color: var(--link-host);
+  overflow-wrap: anywhere;
+}
+
+.action-link > [data-slot="glyph"] {
+  font-family: var(--font-body);
+  font-size: var(--text-body-sm);
+  /* The label colour, not the rule colour: the rule is accent, and in grid the
+     accent measured 2.97:1 on paper, under the 3:1 a glyph needs. 2026-09-24. */
+  color: var(--link-ink);
+  transition: transform var(--dur-fast) var(--ease);
+}
+
+.action-link:hover > [data-slot="label"] { background-size: 100% 2px; }
+.action-link:hover > [data-slot="glyph"] { transform: translate(2px, -2px); }
+.action-link[data-internal]:hover > [data-slot="glyph"] { transform: translateX(3px); }
+
+.action-link:focus-visible {
+  outline: 2px solid var(--link-focus);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+/* The host is order 3 on its own line, so the glyph stays attached to the
+   label it points from at every width. */
+.action-link > [data-slot="label"] { order: 1; }
+.action-link > [data-slot="glyph"] { order: 2; }
+.action-link > [data-slot="host"]  { order: 3; flex-basis: 100%; }
+
+@media (prefers-reduced-motion: reduce) {
+  .action-link > [data-slot="label"],
+  .action-link > [data-slot="glyph"] { transition: none; }
+}

@@ -1,0 +1,267 @@
+/* --------------------------------------------------------------------------
+   VENDORED COPY. Do not edit here.
+   source   /home/user/design-system/templates/website.css
+   version  1.0.0
+   refresh  node sync.mjs --template website "/home/user/PinboardMCP/docs"
+   warning  An edit made in this copy is lost on the next sync.
+   -------------------------------------------------------------------------- */
+
+/* ============================================================================
+   website.css · v1.0.0 · a page someone lands on and reads down
+
+   Promoted 2026-09-27 from the first consumer site, where the header, hero,
+   sections and footer were inline. The class names are the ones that site
+   already used, so a consumer switches by adding the template class and
+   deleting its own copy of these rules. DESIGN.md Part 5.4 gives the regions:
+
+     nav       required   the nav-bar component: brand, nav links, actions
+     hero      required   .hero: title, one line, optional call to action
+     main      required   .section, one per anchored section; .section--band
+                          for a dark band; .card-grid inside either
+     appendix  optional   .appendix: method, provenance
+     footer    required   .site-footer: a closing line, link blocks, a coda
+
+   Template CSS sets composition. Colour, type, radius and motion all read
+   tokens. A band reads the field tokens (--field-bg, --field-ink), which stay
+   dark and light in every theme, never --color-text, which flips.
+
+   Markup
+     <div class="tpl tpl--website">
+       <header class="nav-bar site-header" data-component="nav-bar"><div class="inner">
+         <a class="brand" href="#/"><span class="brand-logo"> svg </span></a>
+         <nav><a class="active" href="#/">Work</a> <a href="#/about">About</a></nav>
+         <div class="header-actions"> theme toggle, template-menu </div>
+       </div></header>
+       <main id="main">
+         <section class="hero"><div class="container">
+           <h1>Title</h1><p class="hero-line">One line, with an <em>accent phrase</em>.</p>
+           <a class="cta" href="#work">See the work <span aria-hidden="true">&#8595;</span></a>
+         </div></section>
+         <section class="section" id="work"><div class="container">
+           <p class="section-eyebrow">Eyebrow</p><h2 class="section-title">Heading</h2>
+           <div class="card-grid"> project-card components </div>
+         </div></section>
+         <section class="section section--band" id="more"> ... </section>
+       </main>
+       <footer class="site-footer"><div class="container"> ... </div></footer>
+     </div>
+
+   At 375px: the hero and sections lose a step of padding; the card grid is one
+   column; the footer link blocks stack.
+   ============================================================================ */
+
+/* Every selector here opens with :where(.tpl--website), so the template adds
+   no specificity of its own. A rule the consuming site writes for the same
+   element wins, and a site that writes none gets these defaults. */
+
+:where(.tpl--website) {
+  background: var(--color-bg);
+  background-image: var(--atmosphere-layer, none);
+  background-size: var(--atmosphere-size, auto);
+  background-position: var(--atmosphere-position, 0 0);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  letter-spacing: var(--tracking-body);
+}
+:where(.tpl--website), :where(.tpl--website) *, :where(.tpl--website) *::before, :where(.tpl--website) *::after { box-sizing: border-box; }
+:where(.tpl--website) .container { max-width: var(--max); margin: 0 auto; padding: 0 var(--gutter); }
+:where(.tpl--website) .narrow { max-width: var(--reading); }
+
+/* ---- nav ----------------------------------------------------------------
+   The nav region is the nav-bar component (components/nav-bar), because the
+   same header sits on every template a site offers. This template places it
+   and sets nothing on it. */
+
+/* ---- hero --------------------------------------------------------------- */
+:where(.tpl--website) .hero {
+  padding: calc(var(--space-3xl) + var(--space-lg)) 0 var(--space-3xl);
+  text-align: center;
+}
+:where(.tpl--website) .hero h1 {
+  margin: 0 auto var(--space-base);
+  font-family: var(--font-display);
+  font-variation-settings: var(--display-axes, normal);
+  font-size: var(--text-display);
+  font-weight: var(--heading-weight, 500);
+  line-height: var(--leading-display);
+  letter-spacing: var(--tracking-display);
+  color: var(--color-heading, var(--color-text));
+  text-wrap: balance;
+}
+:where(.tpl--website) .hero .hero-line {
+  max-width: 44ch;
+  margin: 0 auto;
+  font-size: var(--text-body-lg);
+  color: var(--color-text-muted);
+  text-wrap: balance;
+}
+/* The phrase a page names itself with: display face, a step up, in the accent
+   text colour, sitting on the line. */
+:where(.tpl--website) .hero .hero-line em {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1.4em;
+  line-height: 1;
+  color: var(--color-accent-text, var(--color-accent-deep));
+  padding: 0 0.12em;
+}
+
+/* The call to action: a pill whose text and outline read one token. */
+:where(.tpl--website) .cta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-md);
+  min-height: 44px;
+  margin-top: var(--space-xl);
+  padding: var(--space-md) var(--space-lg);
+  border: var(--border-width) var(--border-style) var(--color-accent-text, var(--color-accent-deep));
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-accent-text, var(--color-accent-deep));
+  font-family: var(--font-body);
+  font-size: var(--text-body-sm);
+  font-weight: 500;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: var(--eyebrow-case);
+  line-height: 1.2;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: background var(--dur-base) var(--ease), color var(--dur-base) var(--ease);
+}
+:where(.tpl--website) .cta:hover {
+  background: var(--color-accent-text, var(--color-accent-deep));
+  color: var(--color-text-inverse);
+}
+:where(.tpl--website) .cta:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 3px; }
+@media (max-width: 600px) {
+  :where(.tpl--website) .hero { padding: var(--space-2xl) 0 var(--space-xl); }
+}
+
+/* ---- main --------------------------------------------------------------- */
+:where(.tpl--website) .section {
+  position: relative;
+  padding: var(--space-3xl) 0;
+  scroll-margin-top: calc(var(--space-2xl) + var(--space-xl));
+}
+:where(.tpl--website) .section + .section:not(.section--band) {
+  border-top: var(--border-width) var(--border-style) var(--color-border);
+}
+:where(.tpl--website) .section-eyebrow {
+  margin: 0 0 var(--space-sm);
+  font-family: var(--font-eyebrow, var(--font-body));
+  font-size: var(--text-eyebrow);
+  font-weight: 600;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: var(--eyebrow-case);
+  color: var(--color-text-muted);
+}
+:where(.tpl--website) .section-title {
+  margin: 0 0 var(--space-xl);
+  font-family: var(--font-display);
+  font-variation-settings: var(--display-axes, normal);
+  font-size: var(--text-heading-lg);
+  font-weight: var(--heading-weight, 500);
+  line-height: var(--leading-display);
+  letter-spacing: var(--tracking-display);
+  color: var(--color-heading, var(--color-text));
+  text-wrap: balance;
+}
+:where(.tpl--website) .section-lede {
+  max-width: var(--reading);
+  margin: calc(-1 * var(--space-base)) 0 var(--space-xl);
+  font-size: var(--text-body-lg);
+  color: var(--color-text-muted);
+}
+
+/* A dark band. Everything on it reads the field tokens. */
+:where(.tpl--website) .section--band {
+  background: var(--field-bg, var(--color-text));
+  color: var(--field-ink, var(--color-text-inverse));
+}
+:where(.tpl--website) .section--band .section-title { color: inherit; }
+:where(.tpl--website) .section--band .section-eyebrow,
+:where(.tpl--website) .section--band .section-lede { color: color-mix(in oklch, var(--field-ink, var(--color-text-inverse)) 78%, transparent); }
+
+/* The card grid. Cards are components; the grid only places them. */
+:where(.tpl--website) .card-grid {
+  display: grid;
+  gap: var(--space-lg);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+}
+:where(.tpl--website) .card-grid[data-cols="2"] { grid-template-columns: repeat(auto-fill, minmax(min(100%, 24rem), 1fr)); }
+@media (max-width: 600px) {
+  :where(.tpl--website) .section { padding: var(--space-2xl) 0; }
+}
+
+/* ---- appendix ------------------------------------------------------------ */
+:where(.tpl--website) .appendix {
+  padding: var(--space-2xl) 0;
+  border-top: var(--border-width) var(--border-style) var(--color-border);
+  font-size: var(--text-body-sm);
+  color: var(--color-text-muted);
+}
+
+/* ---- footer --------------------------------------------------------------
+   On the band ground in every style, so the page ends on the same beat. */
+:where(.tpl--website) .site-footer {
+  padding: var(--space-3xl) 0 calc(var(--space-3xl) + var(--space-base));
+  background: var(--field-bg, var(--color-text));
+  color: var(--field-ink, var(--color-text-inverse));
+}
+:where(.tpl--website) .site-footer h2 {
+  margin: 0 0 var(--space-base);
+  font-family: var(--font-display);
+  font-variation-settings: var(--display-axes, normal);
+  font-size: var(--text-heading-xl);
+  font-weight: var(--heading-weight, 500);
+  line-height: var(--leading-display);
+  letter-spacing: var(--tracking-display);
+}
+:where(.tpl--website) .site-footer p {
+  max-width: 50ch;
+  margin: 0 0 var(--space-xl);
+  color: color-mix(in oklch, var(--field-ink, var(--color-text-inverse)) 78%, transparent);
+}
+:where(.tpl--website) .site-footer .links {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-lg);
+  padding-top: var(--space-lg);
+  border-top: var(--border-width) var(--border-style) color-mix(in oklch, var(--field-ink, var(--color-text-inverse)) 18%, transparent);
+}
+@media (min-width: 560px) { :where(.tpl--website) .site-footer .links { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 30rem; } }
+:where(.tpl--website) .site-footer .link-block { display: flex; flex-direction: column; gap: var(--space-sm); }
+:where(.tpl--website) .site-footer .link-block h4 {
+  margin: 0 0 var(--space-xs);
+  font-size: var(--text-eyebrow);
+  font-weight: 600;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: var(--eyebrow-case);
+  color: color-mix(in oklch, var(--field-ink, var(--color-text-inverse)) 70%, transparent);
+}
+:where(.tpl--website) .site-footer .link-block a,
+:where(.tpl--website) .site-footer .link-block p {
+  margin: 0;
+  color: var(--field-ink, var(--color-text-inverse));
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklch, var(--field-ink, var(--color-text-inverse)) 30%, transparent);
+  text-underline-offset: 3px;
+  transition: text-decoration-color var(--dur-base) var(--ease);
+}
+:where(.tpl--website) .site-footer .link-block a:hover { text-decoration-color: currentColor; }
+:where(.tpl--website) .site-footer a:focus-visible { outline: 2px solid var(--field-ink, var(--color-text-inverse)); outline-offset: 2px; }
+:where(.tpl--website) .site-footer .coda {
+  margin-top: var(--space-xl);
+  padding-top: var(--space-base);
+  border-top: var(--border-width) var(--border-style) color-mix(in oklch, var(--field-ink, var(--color-text-inverse)) 18%, transparent);
+  font-size: var(--text-caption);
+  color: color-mix(in oklch, var(--field-ink, var(--color-text-inverse)) 70%, transparent);
+}
+:where(.tpl--website) .site-footer .coda a { color: inherit; text-underline-offset: 3px; }
+
+@media (prefers-reduced-motion: reduce) {
+  :where(.tpl--website) * { transition-duration: 0ms !important; }
+}

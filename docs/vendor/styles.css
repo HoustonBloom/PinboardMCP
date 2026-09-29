@@ -1,0 +1,669 @@
+/* --------------------------------------------------------------------------
+   VENDORED COPY. Do not edit here.
+   source   /home/user/design-system/styles/{editorial,civic,grid,ember,bloom}.css
+   version  0.2.0
+   refresh  node sync.mjs --styles "/home/user/PinboardMCP/docs"
+   warning  An edit made in this copy is lost on the next sync.
+   -------------------------------------------------------------------------- */
+
+
+
+[data-style="editorial"] {
+  /* ---- layer 1 · palette primitives ------------------------------------ */
+  --palette-paper:        #FAF8F3;
+  --palette-peach:        #F5E2D5;
+  --palette-peach-deep:   #EDD3BF;
+  --palette-ink:          #1A1A1A;
+  --palette-ink-soft:     #3D3A35;
+  --palette-ink-faint:    #6B655B;
+  --palette-line:         #E5DFD2;
+  --palette-line-deep:    #D9D0BD;
+  --palette-accent:       #8C4A2C;
+  --palette-accent-deep:  #6E3A22;
+  --palette-accent-soft:  #F5E9DF;
+  /* GATE CORRECTION 2026-09-21. DESIGN.md Part 2.2 proposed #FB7185 for the
+     focus ring. Measured against --color-bg it is 2.54:1 and the CONTRACT
+     requires 3:1, so the proposal is corrected to the nearest rose that
+     clears: #F43F5E at 3.46:1. The source site shipped no focus token, so
+     nothing live changed colour. */
+  --palette-rose:         #F43F5E;
+
+  /* ---- layer 2 · surface and text -------------------------------------- */
+  --color-bg:            var(--palette-paper);
+  --color-surface:       var(--palette-paper);
+  --color-surface-alt:   var(--palette-peach);
+  --color-surface-media: var(--palette-peach-deep);
+  --color-text:          var(--palette-ink);
+  --color-text-muted:    var(--palette-ink-soft);
+  --color-text-faint:    var(--palette-ink-faint);
+  --color-text-inverse:  var(--palette-paper);
+  --color-accent:        var(--palette-accent);
+  --color-accent-deep:   var(--palette-accent-deep);
+  --color-accent-soft:   var(--palette-accent-soft);
+  --color-border:        var(--palette-line);
+  --color-border-strong: var(--palette-line-deep);
+  --color-focus:         var(--palette-rose);
+
+  /* ---- layer 2 · type --------------------------------------------------- */
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+  --font-body:    "Inter", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-mono:    "JetBrains Mono", ui-monospace, monospace;
+  --font-hand:    "Caveat", "Bradley Hand", cursive;
+  --display-axes: "opsz" 144, "SOFT" 0, "WONK" 0;
+
+  /* TYPE SCALE, regenerated 2026-09-21 per styles/CONTRACT.md.
+     base 16px at 375 and 17px at 1440 · ratio 1.18 small, 1.26 large
+     anchors 375px and 1440px · every fluid step is a linear interpolation
+     between them, so the ladder cannot cross at any width.
+     The values DESIGN.md 2.2 recorded were not a scale: their step ratios ran
+     1.70, 1.14, 1.47, 1.25, 1.34, and --text-body-lg collapsed into
+     --text-body at 375px. Display topped out at 92px; it now tops out at 68. */
+  --text-display:    clamp(2.7rem,   2.153rem + 2.332vw,  4.252rem);  /* 43.2 to 68.0 */
+  --text-heading-xl: clamp(2.288rem, 1.905rem + 1.632vw,  3.374rem);  /* 36.6 to 54.0 */
+  --text-heading-lg: clamp(1.939rem, 1.678rem + 1.111vw,  2.678rem);  /* 31.0 to 42.8 */
+  --text-heading-md: clamp(1.643rem, 1.473rem + 0.7247vw, 2.125rem);  /* 26.3 to 34.0 */
+  --text-card:       clamp(1.392rem, 1.289rem + 0.4423vw, 1.687rem);  /* 22.3 to 27.0 */
+  --text-body-lg:    clamp(1.18rem,  1.124rem + 0.2385vw, 1.339rem);  /* 18.9 to 21.4 */
+  --text-body:       16px;   /* fixed: base */
+  --text-body-sm:    14px;   /* fixed */
+  --text-caption:    12px;   /* fixed */
+  --text-eyebrow:    11px;   /* fixed */
+
+  --leading-display:  1.05;
+  --leading-body:     1.6;
+  --tracking-display: -0.02em;
+  --tracking-body:    0em;
+  --tracking-eyebrow: 0.18em;
+  --eyebrow-case: uppercase;   /* the source site sets eyebrows uppercase */
+
+  /* ---- layer 2 · shape --------------------------------------------------- */
+  --radius-sm:    3px;
+  --radius-md:    6px;
+  --radius-lg:    10px;
+  --radius-xl:    22px;
+  --radius-full:  999px;
+  --border-width: 1px;
+  --border-style: solid;
+
+  /* ---- layer 2 · depth --------------------------------------------------- */
+  --shadow-rest:  none;
+  --shadow-raise: 0 10px 22px color-mix(in oklch, var(--palette-ink) 12%, transparent);
+  --shadow-high:  0 18px 36px color-mix(in oklch, var(--palette-ink) 18%, transparent);
+  --shadow-modal: 0 32px 64px color-mix(in oklch, var(--palette-ink) 50%, transparent);
+
+  /* ---- layer 2 · rhythm -------------------------------------------------- */
+  --space-xs: 4px;  --space-sm: 8px;  --space-md: 12px; --space-base: 16px;
+  --space-lg: 24px; --space-xl: 32px; --space-2xl: 48px; --space-3xl: 72px;
+  --max:     1240px;
+  --reading: 720px;
+  --gutter:  24px;
+
+  /* ---- layer 2 · motion --------------------------------------------------- */
+  --dur-fast: 150ms;
+  --dur-base: 220ms;
+  --dur-slow: 320ms;
+  --ease:     ease;
+  --lift:     -3px;
+
+  /* ---- layer 2 · atmosphere ------------------------------------------------ */
+  --atmosphere:     field-v2;
+  --field-bg:       #0B0D10;
+  --field-particle: var(--palette-rose);
+
+  /* ---- layer 3 · component bends ------------------------------------------- */
+  /* editorial bends nothing. Every component token falls back to its layer 2
+     default, which is what makes it the reference style. */
+}
+
+[data-style="civic"] {
+  /* ---- layer 1 · palette primitives ------------------------------------ */
+  --palette-paper: #F2E8D4;
+  --palette-cream: #FBF6EA;
+  --palette-sage:  #A7B0A0;
+  --palette-clay:  #C57B57;
+  --palette-brass: #B08D4F;
+  --palette-ink:   #23291F;
+  --palette-line:  #D8C9AC;
+  /* GATE CORRECTION 2026-09-21, two steps.
+     The artifact's stone is #7A7166, which measures 3.94:1 against --color-bg,
+     below the AA 4.5:1 the CONTRACT requires of --color-text-muted. The toggle
+     frame is still shipping that failing value.
+     Darkening it alone was not enough. Option A carries one muted grey, and the
+     CONTRACT asks for three text levels (text, muted, faint) legible over three
+     surface levels (cream, paper, wheat). Read on the darkest of those, faint
+     came in at 4.20:1. Lightening the wheat instead would have fixed the text
+     and destroyed the panel, dropping it to 1.04:1 against bg.
+     So the ramp is rebuilt with two stops rather than one, keeping the hue and
+     the ladder order (muted more prominent than faint):
+       stone      #5F5649  muted, 5.93:1 on bg
+       stone-soft #665D51  faint, 5.31:1 on bg and 4.75:1 on wheat
+     This is the largest departure from the artifact in this file and the reason
+     is recorded here rather than buried. */
+  --palette-stone:      #5F5649;
+  --palette-stone-soft: #665D51;
+  --palette-clay-deep: #8A4A2B;
+  --palette-clay-soft: #F1DDD0;
+  --palette-wheat:     #E8DCC0;
+  --palette-wheat-deep:#DCCDA9;
+
+  /* ---- layer 2 · surface and text -------------------------------------- */
+  --color-bg:            var(--palette-paper);
+  --color-surface:       var(--palette-cream);
+  --color-surface-alt:   var(--palette-wheat);
+  --color-surface-media: var(--palette-wheat-deep);
+  --color-text:          var(--palette-ink);
+  --color-text-muted:    var(--palette-stone);
+  --color-text-faint:    var(--palette-stone-soft);
+  --color-text-inverse:  var(--palette-cream);
+  --color-accent:        var(--palette-clay);
+  --color-accent-deep:   var(--palette-clay-deep);
+  --color-accent-soft:   var(--palette-clay-soft);
+  --color-border:        var(--palette-line);
+  --color-border-strong: var(--palette-sage);
+  --color-focus:         var(--palette-clay-deep);
+
+  /* ---- layer 2 · type --------------------------------------------------- */
+  --font-display: "Gulax", "Fraunces", Georgia, serif;
+  --font-body:    "Space Grotesk", system-ui, sans-serif;
+  --font-eyebrow: "Aldrich", system-ui, sans-serif;
+  --font-mono:    "JetBrains Mono", ui-monospace, monospace;
+
+  /* TYPE SCALE, regenerated 2026-09-21 per styles/CONTRACT.md.
+     base 17px at both anchors * ratio 1.16 small, 1.24 large
+     anchors 375px and 1440px * every fluid step is a linear interpolation
+     between them, so the ladder cannot cross at any width.
+     The toggle frame's values were not a scale: step ratios ran 1.52, 1.53,
+     1.25, 1.18, 1.07, and --text-card (20.8px) overtook --text-heading-md
+     (20px) at 375px, inverting the ladder. */
+  --text-display:    clamp(2.589rem, 2.14rem  + 1.914vw,  3.862rem);  /* 41.4 to 61.8 */
+  --text-heading-xl: clamp(2.232rem, 1.921rem + 1.327vw,  3.115rem);  /* 35.7 to 49.8 */
+  --text-heading-lg: clamp(1.924rem, 1.717rem + 0.8836vw, 2.512rem);  /* 30.8 to 40.2 */
+  --text-heading-md: clamp(1.658rem, 1.529rem + 0.5519vw, 2.026rem);  /* 26.5 to 32.4 */
+  --text-card:       clamp(1.43rem,  1.358rem + 0.3065vw, 1.634rem);  /* 22.9 to 26.1 */
+  --text-body-lg:    clamp(1.232rem, 1.203rem + 0.1277vw, 1.317rem);  /* 19.7 to 21.1 */
+  --text-body:       17px;   /* fixed: base */
+  --text-body-sm:    15px;   /* fixed */
+  --text-caption:    13px;   /* fixed */
+  --text-eyebrow:    12px;   /* fixed */
+
+  --leading-display:  1.06;
+  --leading-body:     1.6;
+  --tracking-display: 0em;
+  --tracking-body:    0em;
+  --tracking-eyebrow: 0.28em;
+
+  --eyebrow-case: uppercase;   /* Option A sets eyebrows uppercase */
+
+  /* ---- layer 2 · shape --------------------------------------------------- */
+  --radius-sm:    4px;
+  --radius-md:    8px;
+  --radius-lg:    16px;
+  --radius-xl:    28px;
+  --radius-full:  999px;
+  --border-width: 1px;
+  --border-style: solid;
+
+  /* ---- layer 2 · depth --------------------------------------------------- */
+  --shadow-rest:  none;
+  --shadow-raise: 0 8px 20px color-mix(in oklch, var(--palette-ink) 10%, transparent);
+  --shadow-high:  0 16px 34px color-mix(in oklch, var(--palette-ink) 16%, transparent);
+  --shadow-modal: 0 30px 60px color-mix(in oklch, var(--palette-ink) 44%, transparent);
+
+  /* ---- layer 2 · rhythm -------------------------------------------------- */
+  --space-xs: 4px;  --space-sm: 8px;  --space-md: 12px; --space-base: 16px;
+  --space-lg: 24px; --space-xl: 32px; --space-2xl: 48px; --space-3xl: 64px;
+  --max:     1160px;
+  --reading: 720px;
+  --gutter:  clamp(1rem, 3.5vw, 4rem);
+
+  /* ---- layer 2 · motion --------------------------------------------------- */
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 300ms;
+  --ease:     ease;
+  --lift:     0px;
+
+  /* ---- layer 2 · atmosphere ------------------------------------------------ */
+  --atmosphere: warm-radial;
+  --atmosphere-layer:
+    radial-gradient(120% 80% at 100% 0%, color-mix(in oklab, var(--palette-brass) 8%, transparent), transparent 60%),
+    radial-gradient(100% 70% at 0% 100%, color-mix(in oklab, var(--palette-ink) 4%, transparent), transparent 55%);
+
+  /* ---- layer 3 · component bends ------------------------------------------- */
+  /* The artifact bent these with body[data-option="a"] selector overrides.
+     DESIGN.md Part 2.1 names that as its one flaw, so they move into tokens. */
+  --heading-weight:  400;            /* Gulax ships one weight; the artifact
+                                        reset h1-h4 from 700 to 400 */
+  --nav-bg:          color-mix(in oklab, var(--color-bg) 91%, transparent);
+  --nav-blur:        8px;
+  --nav-border:      var(--border-width) var(--border-style) var(--color-border);
+  --nav-radius:      0px;
+  --nav-shadow:      none;
+  --nav-link-font:   var(--font-body);
+  --card-radius:     var(--radius-lg);
+  --card-shadow:     var(--shadow-rest);
+  --card-border:     var(--border-width) var(--border-style) var(--color-border);
+  --btn-border:      var(--border-width) var(--border-style) var(--color-border-strong);
+  --btn-shadow-rest: none;
+  --btn-radius:      var(--radius-full);
+  --btn-weight:      600;
+  --badge-font:      var(--font-eyebrow);
+  --badge-border:    var(--border-width) var(--border-style) var(--color-border);
+}
+
+[data-style="grid"] {
+  /* ---- layer 1 · palette primitives ------------------------------------ */
+  --palette-cream:   #F4EFE3;
+  --palette-surface: #FEFEFB;
+  --palette-navy:    #2B3A8C;
+  --palette-orange:  #E8743B;
+  --palette-ink:     #26262E;
+  --palette-slate:   #5A5A66;
+  --palette-border:  #E3D9C6;
+  --palette-orange-deep: #A8481B;
+  --palette-orange-soft: #FBE4D8;
+  --palette-shell:       #EDE6D6;
+  --palette-shell-deep:  #E0D7C2;
+
+  /* the hub hues, carried because the artifact defines them and a later
+     component may need a categorical ramp */
+  --palette-hub-green:  #5BA86B;
+  --palette-hub-teal:   #3FA6A0;
+  --palette-hub-purple: #8A6FB0;
+  --palette-hub-yellow: #F2C14E;
+  --palette-hub-red:    #D9534F;
+
+  /* ---- layer 2 · surface and text -------------------------------------- */
+  --color-bg:            var(--palette-cream);
+  --color-surface:       var(--palette-surface);
+  --color-surface-alt:   var(--palette-shell);
+  --color-surface-media: var(--palette-shell-deep);
+  --color-text:          var(--palette-ink);
+  --color-heading:       var(--palette-navy);
+  --color-text-muted:    var(--palette-slate);
+  --color-text-faint:    #63636F;
+  --color-text-inverse:  var(--palette-surface);
+  --color-accent:        var(--palette-orange);
+  --color-accent-deep:   var(--palette-orange-deep);
+  --color-accent-soft:   var(--palette-orange-soft);
+  --color-border:        var(--palette-border);
+  --color-border-strong: var(--palette-navy);
+  --color-focus:         var(--palette-orange-deep);
+
+  /* ---- layer 2 · type --------------------------------------------------- */
+  /* Option B's own type set, from applyPresetFonts() in the source frame.
+     The first extraction read the :root block and took the fonts declared
+     there, which are Option A's. The source applies each option's faces from
+     a JS preset at runtime, so the CSS alone shows one type system where the
+     artifact has two. Corrected 2026-09-21 after a review asked why grid was
+     using civic's typeface. */
+  --font-display: "Outfit", system-ui, sans-serif;
+  --font-body:    "DM Sans", system-ui, sans-serif;
+  --font-eyebrow: "Familjen Grotesk", system-ui, sans-serif;
+  --font-mono:    "JetBrains Mono", ui-monospace, monospace;
+
+  /* TYPE SCALE, regenerated 2026-09-21 per styles/CONTRACT.md.
+     base 17px at both anchors * ratio 1.16 small, 1.24 large
+     anchors 375px and 1440px * every fluid step is a linear interpolation
+     between them, so the ladder cannot cross at any width.
+     The toggle frame's values were not a scale: step ratios ran 1.52, 1.53,
+     1.25, 1.18, 1.07, and --text-card (20.8px) overtook --text-heading-md
+     (20px) at 375px, inverting the ladder. */
+  --text-display:    clamp(2.589rem, 2.14rem  + 1.914vw,  3.862rem);  /* 41.4 to 61.8 */
+  --text-heading-xl: clamp(2.232rem, 1.921rem + 1.327vw,  3.115rem);  /* 35.7 to 49.8 */
+  --text-heading-lg: clamp(1.924rem, 1.717rem + 0.8836vw, 2.512rem);  /* 30.8 to 40.2 */
+  --text-heading-md: clamp(1.658rem, 1.529rem + 0.5519vw, 2.026rem);  /* 26.5 to 32.4 */
+  --text-card:       clamp(1.43rem,  1.358rem + 0.3065vw, 1.634rem);  /* 22.9 to 26.1 */
+  --text-body-lg:    clamp(1.232rem, 1.203rem + 0.1277vw, 1.317rem);  /* 19.7 to 21.1 */
+  --text-body:       17px;   /* fixed: base */
+  --text-body-sm:    15px;   /* fixed */
+  --text-caption:    13px;   /* fixed */
+  --text-eyebrow:    12px;   /* fixed */
+
+  --leading-display:  1.06;
+  --leading-body:     1.6;
+  --tracking-display: 0em;
+  --tracking-body:    0em;
+  --tracking-eyebrow: 0.02em;   /* Option B, against civic's 0.28em */
+
+  /* --eyebrow-case is not in styles/CONTRACT.md layer 2 and carries a real
+     difference: civic sets eyebrows uppercase, grid leaves them as written.
+     Flattening it was half of why the two styles looked alike. Reported in
+     FEEDBACK.md rather than hidden. */
+  --eyebrow-case: none;
+
+  /* ---- layer 2 · shape --------------------------------------------------- */
+  --radius-sm:    4px;
+  --radius-md:    8px;
+  --radius-lg:    16px;
+  --radius-xl:    28px;
+  --radius-full:  999px;
+  --border-width: 2px;
+  --border-style: solid;
+
+  /* ---- layer 2 · depth, hard offset rather than ambient ------------------- */
+  --shadow-rest:  2px 2px 0 var(--palette-navy);
+  --shadow-raise: 4px 4px 0 var(--palette-navy);
+  --shadow-high:  6px 6px 0 var(--palette-navy);
+  --shadow-modal: 10px 10px 0 var(--palette-navy);
+
+  /* ---- layer 2 · rhythm -------------------------------------------------- */
+  --space-xs: 4px;  --space-sm: 8px;  --space-md: 12px; --space-base: 16px;
+  --space-lg: 24px; --space-xl: 32px; --space-2xl: 48px; --space-3xl: 64px;
+  --max:     1160px;
+  --reading: 720px;
+  --gutter:  clamp(1rem, 3.5vw, 4rem);
+
+  /* ---- layer 2 · motion --------------------------------------------------- */
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 300ms;
+  --ease:     ease;
+  --lift:     0px;
+
+  /* ---- layer 2 · atmosphere ------------------------------------------------ */
+  --atmosphere: dot-grid;
+  --atmosphere-layer:
+    radial-gradient(color-mix(in oklab, var(--palette-navy) 16%, transparent) 1.2px, transparent 1.3px);
+  --atmosphere-size: 26px 26px;
+  --atmosphere-position: -13px -13px;
+
+  /* ---- layer 3 · component bends ------------------------------------------- */
+  /* The artifact bent these with body[data-option="b"] selector overrides,
+     including the mono nav. DESIGN.md Part 2.1 names that as its one flaw, so
+     each one moves into a token here. */
+  --heading-weight:  700;
+  --nav-bg:          var(--color-surface);
+  --nav-blur:        0px;
+  --nav-border:      var(--border-width) var(--border-style) var(--color-heading);
+  --nav-radius:      var(--radius-full);
+  --nav-shadow:      var(--shadow-high);
+  --nav-link-font:   var(--font-mono);   /* the mono nav, as a token */
+  --card-radius:     var(--radius-md);
+  --card-shadow:     var(--shadow-rest);
+  --card-border:     var(--border-width) var(--border-style) var(--color-heading);
+  --btn-border:      var(--border-width) var(--border-style) var(--color-heading);
+  --btn-shadow-rest: var(--shadow-rest);
+  --btn-radius:      var(--radius-md);
+  --btn-weight:      700;
+  --badge-font:      var(--font-mono);
+  --badge-border:    var(--border-width) var(--border-style) var(--color-heading);
+}
+
+[data-style="ember"] {
+  color-scheme: light;
+  --palette-brand:        #FE6A45;   /* the mark. Fills and graphics, never text here */
+  --palette-paper:        #FBF7F3;
+  --palette-card:         #FFFDFB;
+  --palette-blush:        #FCEAE2;
+  --palette-blush-deep:   #F7D8CB;
+  --palette-ink:          #1D1512;
+  --palette-ink-soft:     #4B3F39;
+  --palette-ink-faint:    #6B5D55;
+  --palette-on-accent:    #FFFFFF;
+  --palette-ember:        #CA2901;   /* solved: 4.6:1 minimum on paper, card, blush, wash */
+  --palette-ember-deep:   #A32000;
+  --palette-wash:         #FFE6DD;
+  --palette-line:         #EEE2D9;
+  --palette-line-deep:    #D7C3B6;
+  --palette-band:         #141211;   /* near-neutral: a brown band under orange read as dusty */
+  --palette-band-ink:     #FBF1EC;
+}
+
+/* ---- TOKEN SET 2 · primitives, dark --------------------------------------
+   The same names as set 1, dark values. The page writes data-theme on <html>
+   before first paint: the visitor's stored choice, else their system setting. */
+[data-style="ember"][data-theme="dark"] {
+  color-scheme: dark;
+  --palette-paper:        #121110;
+  --palette-card:         #1A1817;
+  --palette-blush:        #24201E;
+  --palette-blush-deep:   #2E2926;
+  --palette-ink:          #F7EFEA;
+  --palette-ink-soft:     #D2C4BB;
+  --palette-ink-faint:    #AE9F96;
+  --palette-on-accent:    #121110;
+  --palette-ember:        #FE6A45;
+  --palette-ember-deep:   #FF8A6B;
+  --palette-wash:         #33201A;
+  --palette-line:         #2F2B29;
+  --palette-line-deep:    #4D4744;
+  --palette-band:         #0A0909;
+  --palette-band-ink:     #F7EFEA;
+}
+
+/* ---- TOKEN SET 3 · semantic, one set for both themes ----------------------
+   Components read only these. Each points at a primitive by name, so the
+   same line resolves to the light value or the dark value depending on which
+   primitive set is active. Nothing below this line changes between themes. */
+[data-style="ember"] {
+  /* surface and text */
+  --color-bg:            var(--palette-paper);
+  --color-surface:       var(--palette-card);
+  --color-surface-alt:   var(--palette-blush);
+  --color-surface-media: var(--palette-blush-deep);
+  --color-text:          var(--palette-ink);
+  --color-text-muted:    var(--palette-ink-soft);
+  --color-text-faint:    var(--palette-ink-faint);
+  --color-text-inverse:  var(--palette-on-accent);
+  --color-accent:        var(--palette-ember);
+  --color-accent-deep:   var(--palette-ember-deep);
+  --color-accent-text:   var(--palette-ember);   /* accent text and the outline around it */
+  --color-brand:         var(--palette-brand);   /* the logo; equals the text orange in dark mode */
+  --color-accent-soft:   var(--palette-wash);
+  --color-border:        var(--palette-line);
+  --color-border-strong: var(--palette-line-deep);
+  --color-focus:         var(--palette-ember);
+
+  /* type */
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+  --font-body:    "Inter", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-mono:    "JetBrains Mono", ui-monospace, monospace;
+  --display-axes: "opsz" 144, "SOFT" 0, "WONK" 0;
+
+  /* Same ladder as editorial (375px and 1440px anchors, 1.18 and 1.26), so
+     the type-scale gate holds by construction. Copied, not inherited. */
+  --text-display:    clamp(2.7rem,   2.153rem + 2.332vw,  4.252rem);
+  --text-heading-xl: clamp(2.288rem, 1.905rem + 1.632vw,  3.374rem);
+  --text-heading-lg: clamp(1.939rem, 1.678rem + 1.111vw,  2.678rem);
+  --text-heading-md: clamp(1.643rem, 1.473rem + 0.7247vw, 2.125rem);
+  --text-card:       clamp(1.392rem, 1.289rem + 0.4423vw, 1.687rem);
+  --text-body-lg:    clamp(1.18rem,  1.124rem + 0.2385vw, 1.339rem);
+  --text-body:       16px;
+  --text-body-sm:    14px;
+  --text-caption:    12px;
+  --text-eyebrow:    11px;
+
+  --leading-display:  1.05;
+  --leading-body:     1.6;
+  --tracking-display: -0.02em;
+  --tracking-body:    0em;
+  --tracking-eyebrow: 0.14em;
+  --eyebrow-case: uppercase;
+
+  /* shape */
+  --radius-sm:    4px;
+  --radius-md:    8px;
+  --radius-lg:    12px;
+  --radius-xl:    24px;
+  --radius-full:  999px;
+  --border-width: 1px;
+  --border-style: solid;
+
+  /* depth. Shadows mix from the band colour, which stays dark in both modes,
+     so depth still reads on the dark paper. */
+  --shadow-rest:  none;
+  --shadow-raise: 0 10px 22px color-mix(in oklch, var(--palette-band) 14%, transparent);
+  --shadow-high:  0 18px 40px color-mix(in oklch, var(--palette-band) 22%, transparent);
+  --shadow-modal: 0 32px 64px color-mix(in oklch, var(--palette-band) 55%, transparent);
+
+  /* rhythm */
+  --space-xs: 4px;  --space-sm: 8px;  --space-md: 12px; --space-base: 16px;
+  --space-lg: 24px; --space-xl: 32px; --space-2xl: 48px; --space-3xl: 72px;
+  --max:     1240px;
+  --reading: 720px;
+  --gutter:  24px;
+
+  /* motion */
+  --dur-fast: 150ms;
+  --dur-base: 220ms;
+  --dur-slow: 320ms;
+  --ease:     cubic-bezier(0.2, 0.7, 0.2, 1);
+  --lift:     -4px;
+
+  /* atmosphere. The band is the dark section; it stays dark in both modes and
+     its particles are the brand orange, which clears 6.4:1 on it. */
+  --atmosphere:     field-v2;
+  --field-bg:       var(--palette-band);
+  --field-particle: var(--palette-brand);
+  --field-ink:      var(--palette-band-ink);
+}
+
+[data-style="bloom"] {
+  /* ---- layer 1 · palette primitives ------------------------------------ */
+  --palette-cream:        #ECE5D6;
+  --palette-cream-2:      #E3DCCB;
+  --palette-cream-3:      #D8D1BF;
+  --palette-ink:          #1A1A1A;
+  --palette-ink-soft:     #4A4439;
+  --palette-ink-faint:    #5C5648;
+  --palette-green:        #2D5A3F;
+  --palette-green-deep:   #0F2A1C;
+  --palette-green-light:  #4A8A62;
+  --palette-gold:         #6B4613;
+  /* Butter is 1.12:1 on cream. It is a dark-band colour only, which is why it
+     reaches pages through --field-particle and never through a text token on
+     paper. The source pages carry the same warning in their own comments. */
+  --palette-butter:       #F3D88B;
+
+  /* PROPOSED 2026-09-29. The source drew every hairline as rgba(26,26,26,.13)
+     and rgba over a background is not a token value: it resolves differently on
+     each surface and cannot be measured. These are the two rgba edges flattened
+     against --palette-cream. */
+  --palette-line:         #CFC9BC;
+  --palette-line-deep:    #A8A294;
+  /* PROPOSED 2026-09-29. The source had no soft accent surface; it tinted with
+     rgba(45,90,63,.08). Flattened against cream, as above. */
+  --palette-accent-soft:  #DBE3D9;
+  /* PROPOSED 2026-09-29. The source shipped no focus colour, so nothing live
+     changes. A rust that reads as deliberate against the green rather than as a
+     second accent, and clears the contract's 3:1 at 4.54:1 on cream. */
+  --palette-rose:         #B3402F;
+
+  /* ---- layer 2 · surface and text --------------------------------------- */
+  --color-bg:            var(--palette-cream);
+  --color-surface:       var(--palette-cream);
+  --color-surface-alt:   var(--palette-cream-2);
+  --color-surface-media: var(--palette-cream-3);
+  --color-text:          var(--palette-ink);
+  --color-text-muted:    var(--palette-ink-soft);
+  --color-text-faint:    var(--palette-ink-faint);
+  --color-text-inverse:  var(--palette-cream);
+  --color-accent:        var(--palette-green);
+  --color-accent-deep:   var(--palette-green-deep);
+  --color-accent-soft:   var(--palette-accent-soft);
+  --color-border:        var(--palette-line);
+  --color-border-strong: var(--palette-line-deep);
+  --color-focus:         var(--palette-rose);
+  /* The green clears AA as text on all three surfaces (6.33, 6.33, 5.81), so
+     per CONTRACT it is set to the same primitive rather than left to fall back
+     to the deep step, which would make accent text nearly black. */
+  --color-accent-text:   var(--palette-green);
+  --color-brand:         var(--palette-green);
+  /* --color-heading unset: headings are the same ink as body text here. */
+
+  /* ---- layer 2 · type ---------------------------------------------------- */
+  --font-display: "DM Serif Display", Georgia, "Times New Roman", serif;
+  --font-body:    "Plus Jakarta Sans", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-eyebrow: "JetBrains Mono", ui-monospace, monospace;
+  --font-mono:    "JetBrains Mono", ui-monospace, monospace;
+  --font-hand:    "Caveat", "Bradley Hand", cursive;
+
+  /* TYPE SCALE, generated per styles/CONTRACT.md.
+     base 16px at 375 and 17px at 1440 · ratio 1.2 small, 1.26 large
+     anchors 375px and 1440px · every fluid step is a linear interpolation
+     between them, so the ladder cannot cross at any width. Checked strictly
+     descending at both anchors, fixed steps included. */
+  --text-display:    clamp(2.986rem, 2.5403rem + 1.9014vw, 4.252rem);  /* 47.8 to 68.0 */
+  --text-heading-xl: clamp(2.488rem, 2.1764rem + 1.3310vw, 3.374rem);  /* 39.8 to 54.0 */
+  --text-heading-lg: clamp(2.074rem, 1.8608rem + 0.9080vw, 2.678rem);  /* 33.2 to 42.8 */
+  --text-heading-md: clamp(1.728rem, 1.5881rem + 0.5970vw, 2.125rem);  /* 27.6 to 34.0 */
+  --text-card:       clamp(1.440rem, 1.3531rem + 0.3708vw, 1.687rem);  /* 23.0 to 27.0 */
+  --text-body-lg:    clamp(1.200rem, 1.1511rem + 0.2085vw, 1.339rem);  /* 19.2 to 21.4 */
+  --text-body:       16px;   /* fixed: base */
+  --text-body-sm:    14px;   /* fixed */
+  --text-caption:    12px;   /* fixed */
+  --text-eyebrow:    11px;   /* fixed */
+
+  --leading-display:  1.08;
+  --leading-body:     1.62;
+  --tracking-display: -0.01em;
+  --tracking-body:    0em;
+  --tracking-eyebrow: 0.16em;
+  --eyebrow-case:     uppercase;   /* the source sets eyebrows in tracked caps */
+
+  /* ---- layer 2 · shape ---------------------------------------------------- */
+  --radius-sm:    3px;
+  --radius-md:    6px;
+  --radius-lg:    10px;
+  --radius-xl:    18px;
+  --radius-full:  999px;
+  --border-width: 2px;
+  --border-style: solid;
+
+  /* ---- layer 2 · depth ---------------------------------------------------- */
+  /* Hard offset, no blur. The source's card is a 2px ink edge with the shape
+     repeated 4px down and right; a soft ambient shadow would read as a
+     different family of object. The ramp scales that one idea. */
+  --shadow-rest:  none;
+  --shadow-raise: 3px 3px 0 var(--palette-ink);
+  --shadow-high:  5px 5px 0 var(--palette-ink);
+  --shadow-modal: 8px 8px 0 var(--palette-ink);
+
+  /* ---- layer 2 · rhythm --------------------------------------------------- */
+  --space-xs: 4px;  --space-sm: 8px;  --space-md: 12px; --space-base: 16px;
+  --space-lg: 24px; --space-xl: 32px; --space-2xl: 48px; --space-3xl: 64px;
+  --max:     1080px;
+  --reading: 62ch;
+  --gutter:  clamp(1.5rem, 4vw, 2rem);
+
+  /* ---- layer 2 · motion --------------------------------------------------- */
+  --dur-fast: 150ms;
+  --dur-base: 200ms;
+  --dur-slow: 300ms;
+  --ease:     ease;
+  --lift:     0px;
+
+  /* ---- layer 2 · atmosphere ----------------------------------------------- */
+  /* Flat cream. The source paints no gradient and no grid behind the page: the
+     dark bands carry the contrast instead. Per CONTRACT, a style whose
+     --atmosphere is none leaves the layer, size and position unset. */
+  --atmosphere: none;
+
+  /* The dark band. Named rather than borrowed from --color-text, per CONTRACT,
+     so a later dark mode for this style would not flip the band to cream. */
+  --field-bg:       var(--palette-green-deep);
+  --field-particle: var(--palette-butter);
+  --field-ink:      var(--palette-cream);
+
+  /* ---- layer 2 · weight --------------------------------------------------- */
+  --heading-weight: 400;   /* DM Serif Display ships one weight */
+
+  /* ---- layer 3 · component bends ------------------------------------------ */
+  --nav-bg:          color-mix(in oklab, var(--color-bg) 93%, transparent);
+  --nav-blur:        8px;
+  --nav-border:      1px var(--border-style) var(--color-border);
+  --nav-radius:      0px;
+  --nav-shadow:      none;
+  --nav-link-font:   var(--font-mono);
+  --card-radius:     var(--radius-lg);
+  --card-shadow:     var(--shadow-raise);
+  --card-border:     var(--border-width) var(--border-style) var(--color-text);
+  --btn-radius:      var(--radius-lg);
+  --btn-border:      var(--border-width) var(--border-style) var(--color-accent);
+  --btn-shadow-rest: none;
+  --btn-weight:      800;
+  --badge-font:      var(--font-eyebrow);
+  --badge-border:    1px var(--border-style) var(--color-border);
+}
+

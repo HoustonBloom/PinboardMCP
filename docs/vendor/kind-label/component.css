@@ -1,0 +1,74 @@
+/* --------------------------------------------------------------------------
+   VENDORED COPY. Do not edit here.
+   source   /home/user/design-system/components/kind-label/component.css
+   version  1.1.0
+   refresh  node sync.mjs kind-label "/home/user/PinboardMCP/docs"
+   warning  An edit made in this copy is lost on the next sync.
+   -------------------------------------------------------------------------- */
+
+/* ============================================================================
+   kind-label · v1.1.0 · atom
+
+   Says what kind of thing an item is: a show, a talk, a program, a template.
+   The convention: a neutral chip with a 6px dot,
+   low chroma, mono. Not a coloured pill ground; that pattern is retired.
+
+   Markup
+     <span class="kind-label" data-component="kind-label" data-kind="show">Show</span>
+
+   Token surface:
+     --kind-ink      text                   --color-text-muted
+     --kind-ground   chip fill              --color-surface
+     --kind-rule     chip border            --color-border-strong
+     --kind-dot      the dot                set per data-kind below
+
+   The dot colours come from layer 2 tokens that already exist. The contract
+   has no categorical palette, so four kinds reuse four existing tokens; a
+   fifth kind would need one. Recorded in consumers.json contract-gaps.
+
+   data-tone="inverse" is the same chip on a dark ground.
+
+   At 375px: unchanged. It is one line of one or two words.
+   ============================================================================ */
+
+.kind-label {
+  --kind-ink: var(--color-text-muted);
+  --kind-ground: var(--color-surface);
+  --kind-rule: var(--color-border-strong);
+  --kind-dot: var(--color-text-faint);
+
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 10px 3px 8px;
+  border: var(--border-width) var(--border-style) var(--kind-rule);
+  border-radius: var(--radius-full);
+  background: var(--kind-ground);
+  color: var(--kind-ink);
+  font-family: var(--font-mono, var(--font-body));
+  font-size: var(--text-caption);
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.kind-label::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--kind-dot);
+  flex: none;
+}
+
+.kind-label[data-kind="show"]     { --kind-dot: var(--color-focus); }
+.kind-label[data-kind="talk"]     { --kind-dot: var(--color-accent); }
+.kind-label[data-kind="program"]  { --kind-dot: var(--color-accent-deep); }
+.kind-label[data-kind="template"],
+.kind-label[data-kind="project"]  { --kind-dot: var(--color-text-faint); }
+
+.kind-label[data-tone="inverse"] {
+  --kind-ink: var(--field-ink, var(--color-text-inverse));
+  --kind-ground: color-mix(in oklch, var(--field-bg, var(--color-text)) 55%, transparent);
+  --kind-rule: color-mix(in oklch, var(--field-ink, var(--color-text-inverse)) 35%, transparent);
+}
